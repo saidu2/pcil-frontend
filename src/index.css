@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold: #B8860B;
+  --gold-light: #D4A017;
+  --gold-dark: #8B6914;
+}
+
+/* Light mode */
+.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f7f4;
+  --bg-card: #ffffff;
+  --bg-input: #f4f3f0;
+  --border: #e5e0d5;
+  --border-hover: #B8860B;
+  --text-primary: #1a1a1a;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+  --nav-bg: #ffffff;
+  --nav-border: #ede9e0;
+  --shadow: 0 2px 20px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(184,134,11,0.15);
+}
+
+/* Dark mode */
+.dark {
+  --bg-primary: #080808;
+  --bg-secondary: #111111;
+  --bg-card: #111111;
+  --bg-input: #1a1a1a;
+  --border: #2a2a2a;
+  --border-hover: #B8860B;
+  --text-primary: #ffffff;
+  --text-secondary: #aaaaaa;
+  --text-muted: #666666;
+  --nav-bg: #0a0a0a;
+  --nav-border: #2a2a2a;
+  --shadow: 0 2px 20px rgba(0,0,0,0.4);
+  --shadow-hover: 0 8px 30px rgba(184,134,11,0.2);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Smooth transitions on theme elements */
+* {
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+/* Recharts tooltip override */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+}
