@@ -18,6 +18,7 @@ import Settings from './pages/Settings'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import VerifyEmail from './pages/VerifyEmail'
+import VerifyEmailPending from './pages/VerifyEmailPending'
 import AdminLogin from './pages/AdminLogin'
 import AdminPanel from './pages/AdminPanel'
 
@@ -35,6 +36,7 @@ export default function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/quiz" element={<Quiz />} />

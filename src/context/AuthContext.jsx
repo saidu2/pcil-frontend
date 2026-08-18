@@ -265,10 +265,11 @@ export function AuthProvider({ children }) {
     const { data } = await api.post('/auth/register', { full_name, email, phone, password })
     const t = data.access_token
     sessionStorage.setItem('pcil-token', t)
+    setToken(t)
     setLoading(true)
     try {
       const me = await fetchMe()
-      return me
+      return { user: me, emailVerificationRequired: !!data.email_verification_required }
     } finally {
       setLoading(false)
     }

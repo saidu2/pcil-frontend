@@ -24,8 +24,12 @@ export default function Signup() {
     if (form.password !== form.confirm) { setError('Passwords do not match.'); return }
     setLoading(true)
     try {
-      await register({ full_name: form.full_name, email: form.email, phone: form.phone, password: form.password })
-      navigate('/dashboard', { replace: true })
+      const result = await register({ full_name: form.full_name, email: form.email, phone: form.phone, password: form.password })
+      if (result?.emailVerificationRequired) {
+        navigate('/verify-email-pending', { replace: true, state: { email: form.email } })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
     } catch (err) {
       const detail = err.response?.data?.detail
       setError(typeof detail === 'string' ? detail : 'Registration failed. This email may already be registered.')

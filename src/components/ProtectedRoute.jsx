@@ -24,5 +24,18 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />
   }
 
+  // Block access to protected routes until the client has confirmed their
+  // email address (NEW) — registration issues a real token immediately, so
+  // without this check an unverified client could load the dashboard shell
+  // even though every data request would then fail with a 403 from
+  // get_current_verified_email_user on the backend. This catches it earlier,
+  // with a clean redirect instead of a half-loaded page full of errors.
+  //
+  // /verify-email-pending itself is NOT wrapped in ProtectedRoute (see
+  // App.jsx), so this can't create a redirect loop.
+  if (!user.isVerified) {
+    return <Navigate to="/verify-email-pending" state={{ email: user.email }} replace />
+  }
+
   return children
 }
