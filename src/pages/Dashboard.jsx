@@ -44,28 +44,45 @@ const GOLD_SHADES = [
   '#5A4205',
 ]
 
-function parseRoi(roi = '') {
-  const nums = roi.match(/[\d.]+/g)
-  if (!nums) return 12
-  const vals = nums.map(Number).filter(n => n > 0 && n < 100)
-  if (!vals.length) return 12
-  return vals.reduce((a, b) => a + b, 0) / vals.length
-}
-
-function buildMultiGrowthData(activeSubs) {
+function buildMultiGrowthData(activeSubs, portfolios) {
   if (!activeSubs.length) return { data: [], keys: [] }
-  const currentMonth = new Date().getMonth() + 1
-  const months = MONTHS.slice(0, currentMonth)
-  const data = months.map((month, i) => {
+
+  // Real valuation snapshots only — this is a managed private portfolio, so
+  // growth only ever exists once admin has actually added holdings and run
+  // a valuation. A subscription with no valuation yet contributes a flat
+  // line at its principal (nothing has happened to it yet), never a
+  // fabricated compound-growth curve.
+  const monthKey = (d) => {
+    const dt = new Date(d)
+    return `${dt.toLocaleString('en-GB', { month: 'short' })} ${dt.getFullYear()}`
+  }
+
+  // Every month with at least one real valuation snapshot, across all subs
+  // shown on this chart — plus the current month, so subs still awaiting
+  // their first valuation still get a point on the axis.
+  const monthSet = new Set()
+  activeSubs.forEach(s => {
+    const pf = (portfolios || []).find(p => String(p.subscription_id) === String(s.id))
+    ;(pf?.value_history || []).forEach(v => monthSet.add(monthKey(v.date)))
+  })
+  monthSet.add(monthKey(new Date()))
+  const months = Array.from(monthSet).sort((a, b) => new Date('1 ' + a) - new Date('1 ' + b))
+
+  const data = months.map(month => {
     const entry = { month }
     activeSubs.forEach(s => {
-      const roi = parseRoi(s.product_roi || s.roi || '')
-      const dailyRate = roi / 100 / 365
-      const daysInMonth = (i + 1) * 30
-      entry[s.id] = Math.round(Number(s.amount) * Math.pow(1 + dailyRate, daysInMonth))
+      const pf = (portfolios || []).find(p => String(p.subscription_id) === String(s.id))
+      const history = pf?.value_history || []
+      const monthEnd = new Date('1 ' + month)
+      monthEnd.setMonth(monthEnd.getMonth() + 1)
+      const upToThisMonth = history.filter(v => new Date(v.date) < monthEnd)
+      const latest = upToThisMonth[upToThisMonth.length - 1]
+      // Before any real valuation exists, the honest value is the principal
+      entry[s.id] = latest ? latest.total_value : Number(s.amount)
     })
     return entry
   })
+
   const keys = activeSubs.map(s => ({ id: s.id, label: s.product_name || s.productName || 'Investment' }))
   return { data, keys }
 }
@@ -852,15 +869,24 @@ export default function Dashboard() {
     return Math.max(0, (Number(sub.amount) || 0) - totalRedeemed)
   }
 
-  // Returns accrued returns for a subscription based on product ROI
+  // Returns accrued returns for a subscription. This platform is always a
+  // managed private portfolio — a client subscribes with an amount, and
+  // admin adds the REAL holdings (equity, fixed income, or a mix) after
+  // reviewing the receipt and agreeing the composition with the client.
+  // There is no product where returns happen automatically from a generic
+  // percentage the moment a subscription is approved, so no subscription
+  // should show fictional ROI-projected growth — ever. Once admin has
+  // added real holdings, the REAL valuation (from portfolios[], driven by
+  // actual InstrumentPrice/ROI-per-holding data) is what's shown instead.
   const getAccrued = (sub) => {
     const remaining = getRemaining(sub)
     if (remaining <= 0) return 0
-    const roi = parseRoi(sub.product_roi || sub.roi || '')
-    const days = Math.max(0,
-      (Date.now() - safeDateObj(sub.activated_at || sub.activatedAt || sub.submitted_at || sub.submittedAt).getTime()) / (1000 * 60 * 60 * 24)
-    )
-    return remaining * (roi / 100 / 365) * days
+
+    const pf = (portfolios || []).find(p => String(p.subscription_id) === String(sub.id))
+    if (pf && pf.current_value != null) {
+      return Math.max(0, pf.current_value - remaining)
+    }
+    return 0
   }
 
   // Split active subscriptions by currency
@@ -883,8 +909,8 @@ export default function Dashboard() {
   const portfolioValue = portfolioValueNgn + portfolioValueUsd
   const returnPct = totalInvested > 0 ? ((totalReturns / totalInvested) * 100).toFixed(1) : null
 
-  const { data: growthDataNgn, keys: growthKeysNgn } = useMemo(() => buildMultiGrowthData(ngnSubs), [ngnSubs])
-  const { data: growthDataUsd, keys: growthKeysUsd } = useMemo(() => buildMultiGrowthData(usdSubs), [usdSubs])
+  const { data: growthDataNgn, keys: growthKeysNgn } = useMemo(() => buildMultiGrowthData(ngnSubs, portfolios), [ngnSubs, portfolios])
+  const { data: growthDataUsd, keys: growthKeysUsd } = useMemo(() => buildMultiGrowthData(usdSubs, portfolios), [usdSubs, portfolios])
   const { ngn: allocationNgn, usd: allocationUsd } = useMemo(() => buildAllocation(activeSubscriptions), [activeSubscriptions])
   const transactions = useMemo(() => buildTransactions(subscriptions, redemptions), [subscriptions, redemptions])
 
