@@ -377,10 +377,12 @@ export function AdminProvider({ children }) {
   }
 
   // ── Redemption Actions ─────────────────────────────────────────────────────
-  const processRedemption = async (redemptionId, action, note = '') => {
-    await adminApi.patch(`/admin/redemptions/${redemptionId}/process`, null, {
-      params: { action, note }
-    })
+  // salePrice: only used (and required by the backend) when completing an
+  // equity-holding redemption — the real price the sale executed at.
+  const processRedemption = async (redemptionId, action, note = '', salePrice = null) => {
+    const params = { action, note }
+    if (salePrice != null) params.sale_price = salePrice
+    await adminApi.patch(`/admin/redemptions/${redemptionId}/process`, null, { params })
     await fetchRedemptions()
   }
 

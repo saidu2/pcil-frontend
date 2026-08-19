@@ -297,12 +297,14 @@ export function AuthProvider({ children }) {
   }
 
   // ── Submit redemption ───────────────────────────────────────────────────
-  const submitRedemption = async ({ subscriptionId, amount, note }) => {
-    const { data } = await api.post('/redemptions', {
-      subscription_id: subscriptionId,
-      amount,
-      note: note || '',
-    })
+  // Two shapes: subscription-level (subscriptionId + amount, unchanged) or
+  // equity-holding (holdingId + units, no amount — the real price is set
+  // by admin later, at approval).
+  const submitRedemption = async ({ subscriptionId, amount, holdingId, units, note }) => {
+    const body = holdingId
+      ? { subscription_id: subscriptionId, holding_id: holdingId, units, note: note || '' }
+      : { subscription_id: subscriptionId, amount, note: note || '' }
+    const { data } = await api.post('/redemptions', body)
     await fetchRedemptions()
     await fetchSubscriptions()
     return data

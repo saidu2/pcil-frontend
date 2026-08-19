@@ -716,7 +716,8 @@ export default function Dashboard() {
   const { user, subscriptions, redemptions, portfolios, fetchMe, fetchSubscriptions, fetchRedemptions, fetchPortfolios, fetchNotifications, notifications, unreadCount, markNotificationRead, markAllRead, submitRedemption } = useAuth()
   const [txFilter, setTxFilter] = useState('all')
   const [redeemOpen, setRedeemOpen] = useState(false)
-  const [redeemForm, setRedeemForm] = useState({ subscriptionId: '', amount: '' })
+  const [redeemForm, setRedeemForm] = useState({ subscriptionId: '', amount: '', holdingId: '', units: '' })
+  const [redeemMode, setRedeemMode] = useState('amount') // 'amount' | 'holding' — which shape this request will take
   const [redeemStage, setRedeemStage] = useState('form') // form | submitted
   const [redeemError, setRedeemError] = useState('')
 
@@ -906,15 +907,27 @@ export default function Dashboard() {
 
   // ── Redemption — submits a request, does NOT instantly process ────────────
   const selectedSub = allActiveSubscriptions.find(s => String(s.id) === String(redeemForm.subscriptionId))
+  const selectedPortfolio = (portfolios || []).find(p => String(p.subscription_id) === String(redeemForm.subscriptionId))
+  const equityHoldings = (selectedPortfolio?.holdings || []).filter(h => h.type === 'equity')
+  const selectedHolding = equityHoldings.find(h => String(h.id) === String(redeemForm.holdingId))
 
   const handleRedeemSubmit = async () => {
-    if (!redeemForm.subscriptionId || !redeemForm.amount) return
     setRedeemError('')
     try {
-      await submitRedemption({
-        subscriptionId: redeemForm.subscriptionId,
-        amount: Number(redeemForm.amount),
-      })
+      if (redeemMode === 'holding') {
+        if (!redeemForm.subscriptionId || !redeemForm.holdingId || !redeemForm.units) return
+        await submitRedemption({
+          subscriptionId: redeemForm.subscriptionId,
+          holdingId: redeemForm.holdingId,
+          units: Number(redeemForm.units),
+        })
+      } else {
+        if (!redeemForm.subscriptionId || !redeemForm.amount) return
+        await submitRedemption({
+          subscriptionId: redeemForm.subscriptionId,
+          amount: Number(redeemForm.amount),
+        })
+      }
       setRedeemStage('submitted')
     } catch (err) {
       setRedeemError(err.response?.data?.detail || 'Failed to submit redemption. Please try again.')
@@ -924,7 +937,8 @@ export default function Dashboard() {
   const closeRedeem = () => {
     setRedeemOpen(false)
     setRedeemStage('form')
-    setRedeemForm({ subscriptionId: '', amount: '' })
+    setRedeemMode('amount')
+    setRedeemForm({ subscriptionId: '', amount: '', holdingId: '', units: '' })
   }
 
   // ── Transaction helpers ───────────────────────────────────────────────────────
@@ -1552,7 +1566,7 @@ export default function Dashboard() {
         {redeemStage === 'form' && (
           <div className="space-y-4">
             <Select label="Select Product to Redeem" value={redeemForm.subscriptionId}
-              onChange={e => setRedeemForm(f => ({ ...f, subscriptionId: e.target.value }))} required>
+              onChange={e => setRedeemForm(f => ({ ...f, subscriptionId: e.target.value, holdingId: '', units: '', amount: '' }))} required>
               <option value="">Choose a product…</option>
               {/* Uses allActiveSubscriptions, not the projection-filtered list —
                   clients must be able to redeem from a private portfolio too. */}
@@ -1563,7 +1577,63 @@ export default function Dashboard() {
               ))}
             </Select>
 
-            {selectedSub && (() => {
+            {/* A private-portfolio subscription may hold specific equities.
+                Selling one of those is fundamentally different from a
+                fixed-income redemption: it's a number of units, not a
+                currency amount, and the real price is only known once
+                admin actually executes the sale — so it's offered as a
+                separate mode rather than folded into the amount field. */}
+            {equityHoldings.length > 0 && (
+              <div className="flex gap-2 p-1 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
+                <button type="button" onClick={() => setRedeemMode('amount')}
+                  className="flex-1 text-xs font-semibold py-2 rounded-lg transition"
+                  style={redeemMode === 'amount'
+                    ? { background: 'var(--bg-primary)', color: '#A67C1A' }
+                    : { color: 'var(--text-muted)' }}>
+                  Redeem by Amount
+                </button>
+                <button type="button" onClick={() => setRedeemMode('holding')}
+                  className="flex-1 text-xs font-semibold py-2 rounded-lg transition"
+                  style={redeemMode === 'holding'
+                    ? { background: 'var(--bg-primary)', color: '#A67C1A' }
+                    : { color: 'var(--text-muted)' }}>
+                  Sell a Specific Holding
+                </button>
+              </div>
+            )}
+
+            {redeemMode === 'holding' && equityHoldings.length > 0 && (
+              <div className="space-y-3">
+                <Select label="Select Holding" value={redeemForm.holdingId}
+                  onChange={e => setRedeemForm(f => ({ ...f, holdingId: e.target.value, units: '' }))} required>
+                  <option value="">Choose a holding…</option>
+                  {equityHoldings.map(h => (
+                    <option key={h.id} value={h.id}>
+                      {h.name} · {Number(h.units).toLocaleString()} units held
+                    </option>
+                  ))}
+                </Select>
+
+                {selectedHolding && (
+                  <>
+                    <Input label="Units to Redeem" type="number" min="1" step="any"
+                      max={selectedHolding.units}
+                      value={redeemForm.units}
+                      onChange={e => setRedeemForm(f => ({ ...f, units: e.target.value }))}
+                      placeholder={`Max: ${selectedHolding.units} units`} />
+                    <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)' }} className="rounded-xl p-3">
+                      <p className="text-xs" style={{ color: '#92400e' }}>
+                        ℹ️ This is a request only — the sale hasn't happened yet. The final amount you
+                        receive depends on the actual price achieved when our team executes the sale,
+                        which may differ from current market price.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {redeemMode === 'amount' && selectedSub && (() => {
               const principal = getRemaining(selectedSub)
               const accruedReturns = getAccrued(selectedSub)
               const totalRedeemable = principal + accruedReturns
@@ -1595,20 +1665,25 @@ export default function Dashboard() {
               )
             })()}
 
-            {/* Liquidation policy notice */}
-            <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)' }} className="rounded-xl p-4">
-              <p className="text-xs font-semibold mb-2" style={{ color: '#92400e' }}>📋 Liquidation Policy</p>
-              <ul className="text-xs space-y-1" style={{ color: '#92400e' }}>
-                <li>• Minimum 5 working days notice required for redemption</li>
-                <li>• Early redemption (before agreed tenor): 20% penalty on accrued profit</li>
-                <li>• No penalty if investment has reached maturity</li>
-                <li>• Processing takes 24–72 hours after notice period</li>
-              </ul>
-            </div>
+            {/* Liquidation policy notice — fixed-income terms only; equity
+                sales have no fixed notice period or premature penalty. */}
+            {redeemMode === 'amount' && (
+              <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)' }} className="rounded-xl p-4">
+                <p className="text-xs font-semibold mb-2" style={{ color: '#92400e' }}>📋 Liquidation Policy</p>
+                <ul className="text-xs space-y-1" style={{ color: '#92400e' }}>
+                  <li>• Minimum 5 working days notice required for redemption</li>
+                  <li>• Early redemption (before agreed tenor): 20% penalty on accrued profit</li>
+                  <li>• No penalty if investment has reached maturity</li>
+                  <li>• Processing takes 24–72 hours after notice period</li>
+                </ul>
+              </div>
+            )}
 
             {redeemError && <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 8, textAlign: 'center' }}>{redeemError}</p>}
             <GoldButton onClick={handleRedeemSubmit} className="w-full"
-              disabled={!redeemForm.subscriptionId || !redeemForm.amount}>
+              disabled={redeemMode === 'holding'
+                ? (!redeemForm.subscriptionId || !redeemForm.holdingId || !redeemForm.units)
+                : (!redeemForm.subscriptionId || !redeemForm.amount)}>
               Submit Redemption Request
             </GoldButton>
           </div>

@@ -1348,11 +1348,37 @@ function RedemptionsSection({redemptions, setRedemptions, addAuditLog }) {
   const [actionLoading, setActionLoading] = useState(null)
   const [actionError, setActionError] = useState('')
 
-  const process = async (id) => {
-    setActionLoading(id)
+  // Equity redemptions need the real sale price before they can be
+  // completed — the backend rejects completion without one. Fixed-income
+  // redemptions are unaffected and still complete with a single click.
+  const [salePriceModal, setSalePriceModal] = useState(null) // the redemption row being priced, or null
+  const [salePriceInput, setSalePriceInput] = useState('')
+
+  const process = async (r) => {
+    if (r.holding_id) {
+      setSalePriceModal(r)
+      setSalePriceInput('')
+      return
+    }
+    setActionLoading(r.id)
     setActionError('')
     try {
-      await processRedemption(id, 'complete')
+      await processRedemption(r.id, 'complete')
+    } catch (err) {
+      setActionError((typeof err.response?.data?.detail === 'string' ? err.response.data.detail : err.response?.data?.detail?.[0]?.msg || err.message) || 'Processing failed.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const confirmEquityProcess = async () => {
+    if (!salePriceModal || !salePriceInput) return
+    setActionLoading(salePriceModal.id)
+    setActionError('')
+    try {
+      await processRedemption(salePriceModal.id, 'complete', '', Number(salePriceInput))
+      setSalePriceModal(null)
+      setSalePriceInput('')
     } catch (err) {
       setActionError((typeof err.response?.data?.detail === 'string' ? err.response.data.detail : err.response?.data?.detail?.[0]?.msg || err.message) || 'Processing failed.')
     } finally {
@@ -1365,20 +1391,59 @@ function RedemptionsSection({redemptions, setRedemptions, addAuditLog }) {
       <SectionHeader title="Redemption Management" subtitle={`${redemptions.filter(r => r.status === 'pending').length} pending redemptions`} />
       <ACard style={{ padding: 0 }}>
         <Table
-          cols={['Client', 'Product', 'Amount', 'Penalty', 'Status', 'Requested', 'Actions']}
+          cols={['Client', 'Product / Holding', 'Amount', 'Penalty', 'Status', 'Requested', 'Actions']}
           rows={redemptions.map(r => [
             r.client_name || r.clientName || '—',
-            r.product_name || r.productName || '—',
-            `₦${Number(r.amount || 0).toLocaleString()}`,
+            r.holding_id
+              ? `${r.instrument_name || '—'} (${r.units_sold ?? '—'} units)`
+              : (r.product_name || r.productName || '—'),
+            r.holding_id
+              ? <span>{r.is_equity_estimate ? 'Est. ' : ''}₦{Number(r.amount || 0).toLocaleString()}</span>
+              : `₦${Number(r.amount || 0).toLocaleString()}`,
             (r.penalty_amount || r.penalty) > 0 ? <span style={{ color: '#ef4444' }}>₦{Number(r.penalty_amount || r.penalty).toLocaleString()}</span> : '—',
             <ABadge status={r.status} />,
             new Date(r.requested_at || r.requestedAt).toLocaleDateString('en-GB'),
             r.status === 'pending'
-              ? <ABtn small onClick={() => process(r.id)} disabled={actionLoading === r.id}>{actionLoading === r.id ? '...' : 'Process'}</ABtn>
+              ? <ABtn small onClick={() => process(r)} disabled={actionLoading === r.id}>{actionLoading === r.id ? '...' : 'Process'}</ABtn>
               : <span style={{ color: '#22c55e', fontSize: 12 }}>Done ✓</span>
           ])}
         />
       </ACard>
+
+      {actionError && !salePriceModal && (
+        <p style={{ color: '#ef4444', fontSize: 13, marginTop: 12 }}>{actionError}</p>
+      )}
+
+      {salePriceModal && (
+        <Modal open={!!salePriceModal} onClose={() => setSalePriceModal(null)}
+          title={`Complete Sale: ${salePriceModal.instrument_name || ''}`}>
+          <div className="space-y-4">
+            <p className="text-sm" style={{ color: T.textMuted }}>
+              Enter the actual price per unit the sale of {salePriceModal.units_sold} units executed at.
+              This determines the client's real proceeds and realized gain/loss — it cannot be changed after completing.
+            </p>
+            <AInput
+              label="Sale Price (per unit)"
+              type="number"
+              value={salePriceInput}
+              onChange={e => setSalePriceInput(e.target.value)}
+              placeholder="e.g. 45.50"
+            />
+            {salePriceInput && (
+              <p className="text-xs" style={{ color: T.textMuted }}>
+                Proceeds: ₦{(Number(salePriceInput) * (salePriceModal.units_sold || 0)).toLocaleString()}
+              </p>
+            )}
+            {actionError && <p style={{ color: '#ef4444', fontSize: 13 }}>{actionError}</p>}
+            <div className="flex gap-3">
+              <ABtn outline onClick={() => setSalePriceModal(null)}>Cancel</ABtn>
+              <ABtn onClick={confirmEquityProcess} disabled={!salePriceInput || actionLoading === salePriceModal.id}>
+                {actionLoading === salePriceModal.id ? 'Processing…' : 'Confirm & Complete'}
+              </ABtn>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
