@@ -34,7 +34,7 @@ export default function KycBanner() {
         <div className="max-w-7xl mx-auto flex items-center gap-2">
           <span className="animate-spin text-sm">⏳</span>
           <p className="text-sm text-blue-800">
-            <span className="font-semibold">KYC Under Review</span>: Our team is verifying your documents. This takes 3 to 5 business days. You can browse products but cannot subscribe yet.
+            <span className="font-semibold">KYC Under Review</span>: Our team is verifying your documents. This takes less than 24 hours. You can browse products but cannot subscribe yet.
           </p>
         </div>
       </div>

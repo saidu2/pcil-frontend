@@ -501,7 +501,7 @@ function ProcessingScreen({ onComplete }) {
   const stages = [
     { label: 'Encrypting your documents', done: progress >= 20 },
     { label: 'Submitting to compliance team', done: progress >= 45 },
-    { label: 'Registering in ERP system', done: progress >= 70 },
+    { label: 'Registering in our system', done: progress >= 70 },
     { label: 'Sending confirmation notification', done: progress >= 90 },
     { label: 'Complete', done: progress >= 100 },
   ]
