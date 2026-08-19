@@ -219,7 +219,11 @@ export function generateCertificatePDF(cert) {
       })
 
       // ── Seal / Watermark (center) ─────────────────────────────────────────
-      ctx.globalAlpha = 0.04
+      // Uses the actual company logo (already loaded above for the header)
+      // rather than generic "PRIME CAPITAL" text — falls back to the text
+      // version only if the logo genuinely failed to load, same fallback
+      // philosophy as the header logo above.
+      ctx.globalAlpha = 0.05
       ctx.beginPath()
       ctx.arc(canvas.width / 2, canvas.height / 2, 160, 0, Math.PI * 2)
       ctx.strokeStyle = G
@@ -228,10 +232,19 @@ export function generateCertificatePDF(cert) {
       ctx.beginPath()
       ctx.arc(canvas.width / 2, canvas.height / 2, 148, 0, Math.PI * 2)
       ctx.stroke()
-      ctx.font = 'bold 36px Georgia, serif'
-      ctx.fillStyle = G
-      ctx.textAlign = 'center'
-      ctx.fillText('PRIME CAPITAL', canvas.width / 2, canvas.height / 2 + 12)
+
+      if (logo.complete && logo.naturalWidth > 0) {
+        const maxDim = 220
+        const scale = Math.min(maxDim / logo.naturalWidth, maxDim / logo.naturalHeight)
+        const w = logo.naturalWidth * scale
+        const h = logo.naturalHeight * scale
+        ctx.drawImage(logo, canvas.width / 2 - w / 2, canvas.height / 2 - h / 2, w, h)
+      } else {
+        ctx.font = 'bold 36px Georgia, serif'
+        ctx.fillStyle = G
+        ctx.textAlign = 'center'
+        ctx.fillText('PRIME CAPITAL', canvas.width / 2, canvas.height / 2 + 12)
+      }
       ctx.globalAlpha = 1
 
       // ── Footer ────────────────────────────────────────────────────────────
