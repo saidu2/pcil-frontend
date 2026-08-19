@@ -1448,20 +1448,18 @@ function RedemptionsSection({redemptions, setRedemptions, addAuditLog }) {
   )
 }
 
-function CertificatesSection({certificates, setCertificates, addAuditLog }) {
+function CertificatesSection({certificates, createCertificate, updateCertificate, addAuditLog }) {
   const { T = DARK } = useTheme()
   const { subscriptions } = useAdmin()
   const activeSubs = (subscriptions || []).filter(s => s.status === 'active')
-
-  // Persist issued certs in localStorage so they survive navigation
-  const [localCerts, setLocalCerts] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('pcil_certs') || '[]') } catch { return [] }
-  })
-  const allCerts = [...(certificates || []), ...localCerts]
+  const allCerts = certificates || []
 
   const [modal, setModal] = useState(false)
+  const [editingId, setEditingId] = useState(null)   // null = issuing new, else editing this certificate's id
   const [selectedSubId, setSelectedSubId] = useState('')
   const [form, setForm] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
   const [generating, setGenerating] = useState(null)
   const [emailSent, setEmailSent] = useState(null)
   const set = (f, v) => setForm(p => ({ ...p, [f]: v }))
@@ -1472,6 +1470,7 @@ function CertificatesSection({certificates, setCertificates, addAuditLog }) {
     const sub = activeSubs.find(s => String(s.id) === String(subId))
     if (!sub) return
     setForm({
+      userId: sub.user_id,
       subscriptionId: sub.id,
       clientName:  sub.client_name  || '',
       clientEmail: sub.client_email || '',
@@ -1489,29 +1488,87 @@ function CertificatesSection({certificates, setCertificates, addAuditLog }) {
     })
   }
 
-  const openModal  = () => { setModal(true); setSelectedSubId(''); setForm({}) }
-  const closeModal = () => { setModal(false); setSelectedSubId(''); setForm({}) }
-
-  const issue = () => {
-    if (!form.clientName || !form.productName) return
-    const cert = {
-      id: `cert-${Date.now()}`,
-      ...form,
-      reference: `PCIL/CERT/2026/${String(allCerts.length + 1).padStart(3, '0')}`,
-      status: 'issued',
-    }
-    const updated = [cert, ...localCerts]
-    setLocalCerts(updated)
-    try { localStorage.setItem('pcil_certs', JSON.stringify(updated)) } catch {}
-    addAuditLog('Certificate Issued', form.clientName, 'certificate')
-    closeModal()
+  const openModal = () => {
+    setModal(true); setEditingId(null); setSelectedSubId(''); setForm({}); setFormError('')
   }
+
+  const openEditModal = (cert) => {
+    setModal(true)
+    setEditingId(cert.id)
+    setSelectedSubId('')
+    setFormError('')
+    setForm({
+      clientName:   cert.client_name,
+      clientEmail:  cert.client_email,
+      accountType:  cert.account_type,
+      productName:  cert.product_name,
+      amount:       cert.amount,
+      roi:          cert.roi || '',
+      issueDate:    cert.issue_date,
+      maturityDate: cert.maturity_date || '',
+    })
+  }
+
+  const closeModal = () => {
+    setModal(false); setEditingId(null); setSelectedSubId(''); setForm({}); setFormError('')
+  }
+
+  const issue = async () => {
+    setSaving(true)
+    setFormError('')
+    try {
+      if (editingId) {
+        // Client and subscription are fixed at issue time — only the
+        // certificate's own details can be corrected afterward.
+        await updateCertificate(editingId, {
+          account_type:  form.accountType,
+          product_name:  form.productName,
+          amount:        form.amount,
+          roi:           form.roi,
+          issue_date:    form.issueDate,
+          maturity_date: form.maturityDate || null,
+        })
+        addAuditLog('Certificate Edited', form.clientName, 'certificate')
+      } else {
+        await createCertificate({
+          user_id:         form.userId,
+          subscription_id: form.subscriptionId,
+          account_type:    form.accountType,
+          product_name:    form.productName,
+          amount:          form.amount,
+          roi:             form.roi,
+          issue_date:      form.issueDate,
+          maturity_date:   form.maturityDate || null,
+        })
+        addAuditLog('Certificate Issued', form.clientName, 'certificate')
+      }
+      closeModal()
+    } catch (err) {
+      setFormError(err.response?.data?.detail || 'Could not save certificate. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // certificateGenerator.js expects camelCase fields matching the old local
+  // form shape — this maps a real, backend-persisted certificate record
+  // into that shape rather than changing the (already-correct) generator.
+  const toGeneratorShape = (cert) => ({
+    reference:    cert.reference,
+    clientName:   cert.client_name,
+    accountType:  cert.account_type,
+    productName:  cert.product_name,
+    amount:       cert.amount,
+    roi:          cert.roi,
+    issueDate:    cert.issue_date,
+    maturityDate: cert.maturity_date,
+  })
 
   const handleDownload = async (cert) => {
     setGenerating(cert.id)
     try {
-      await downloadCertificate(cert)
-      addAuditLog('Certificate Downloaded', cert.clientName, 'certificate')
+      await downloadCertificate(toGeneratorShape(cert))
+      addAuditLog('Certificate Downloaded', cert.client_name, 'certificate')
     } catch (e) {
       console.error(e)
     }
@@ -1521,7 +1578,7 @@ function CertificatesSection({certificates, setCertificates, addAuditLog }) {
   const handlePreview = async (cert) => {
     setGenerating(cert.id + '_preview')
     try {
-      await previewCertificate(cert)
+      await previewCertificate(toGeneratorShape(cert))
     } catch (e) {
       console.error(e)
     }
@@ -1531,7 +1588,7 @@ function CertificatesSection({certificates, setCertificates, addAuditLog }) {
   const handleEmail = (cert) => {
     // Mock email send — wire to SendGrid when backend is ready
     setEmailSent(cert.id)
-    addAuditLog('Certificate Emailed', cert.clientName, 'certificate')
+    addAuditLog('Certificate Emailed', cert.client_name, 'certificate')
     setTimeout(() => setEmailSent(null), 3000)
   }
 
@@ -1544,10 +1601,11 @@ function CertificatesSection({certificates, setCertificates, addAuditLog }) {
           cols={['Reference', 'Client', 'Product', 'Amount', 'Issue Date', 'Maturity', 'Status', 'Actions']}
           rows={allCerts.map(c => [
             <span style={{ color: G, fontSize: 12, fontFamily: 'monospace' }}>{c.reference}</span>,
-            c.clientName || '—', c.productName || '—', c.amount || '—',
-            c.issueDate ? new Date(c.issueDate).toLocaleDateString('en-GB') : '—', c.maturityDate ? new Date(c.maturityDate).toLocaleDateString('en-GB') : '—',
+            c.client_name || '—', c.product_name || '—', c.amount || '—',
+            c.issue_date ? new Date(c.issue_date).toLocaleDateString('en-GB') : '—', c.maturity_date ? new Date(c.maturity_date).toLocaleDateString('en-GB') : '—',
             <ABadge status={c.status} />,
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <ABtn small outline onClick={() => openEditModal(c)}>Edit</ABtn>
               <ABtn small outline onClick={() => handlePreview(c)} disabled={generating === c.id + '_preview'}>
                 {generating === c.id + '_preview' ? '…' : 'Preview'}
               </ABtn>
@@ -1561,27 +1619,43 @@ function CertificatesSection({certificates, setCertificates, addAuditLog }) {
           ])}
         />
       </ACard>
-      <Modal open={modal} onClose={closeModal} title="Issue Investment Certificate">
-        <Field label="Select Active Subscription *">
-          <ASelect value={selectedSubId} onChange={e => handleSubSelect(e.target.value)}>
-            <option value="">Choose a client subscription</option>
-            {activeSubs.length === 0
-              ? <option disabled>No active subscriptions</option>
-              : activeSubs.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.client_name || 'Unknown'} · {s.product_name || '—'} · {s.currency === 'USD' ? '$' : '₦'}{Number(s.amount).toLocaleString()}
-                </option>
-              ))
-            }
-          </ASelect>
-        </Field>
+      <Modal open={modal} onClose={closeModal} title={editingId ? `Edit Certificate: ${form.clientName || ''}` : 'Issue Investment Certificate'}>
+        {!editingId && (
+          <Field label="Select Active Subscription *">
+            <ASelect value={selectedSubId} onChange={e => handleSubSelect(e.target.value)}>
+              <option value="">Choose a client subscription</option>
+              {activeSubs.length === 0
+                ? <option disabled>No active subscriptions</option>
+                : activeSubs.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.client_name || 'Unknown'} · {s.product_name || '—'} · {s.currency === 'USD' ? '$' : '₦'}{Number(s.amount).toLocaleString()}
+                  </option>
+                ))
+              }
+            </ASelect>
+          </Field>
+        )}
 
-        {selectedSubId && form.clientName && (
+        {(selectedSubId || editingId) && form.clientName && (
           <div style={{ background: T.card, border: '1px solid #A67C1A33', borderRadius: 10, padding: '14px 18px', marginBottom: 16 }}>
-            <p style={{ color: '#A67C1A', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>AUTO-FILLED FROM SUBSCRIPTION</p>
+            <p style={{ color: '#A67C1A', fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>
+              {editingId ? 'EDITING CERTIFICATE' : 'AUTO-FILLED FROM SUBSCRIPTION'}
+            </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
               <div><span style={{ color: T.textFaint }}>Client: </span><span style={{ color: T.text, fontWeight: 600 }}>{form.clientName}</span></div>
-              <div><span style={{ color: T.textFaint }}>Account: </span><span style={{ color: T.text }}>{form.accountType}</span></div>
+              <div>
+                <span style={{ color: T.textFaint }}>Account: </span>
+                {editingId ? (
+                  <ASelect value={form.accountType || 'Individual'} onChange={e => set('accountType', e.target.value)} style={{ display: 'inline-block', width: 'auto' }}>
+                    <option>Individual</option>
+                    <option>Joint</option>
+                    <option>Minor</option>
+                    <option>Corporate</option>
+                  </ASelect>
+                ) : (
+                  <span style={{ color: T.text }}>{form.accountType}</span>
+                )}
+              </div>
               <div><span style={{ color: T.textFaint }}>Product: </span><span style={{ color: T.text }}>{form.productName}</span></div>
               <div><span style={{ color: T.textFaint }}>Amount: </span><span style={{ color: '#A67C1A', fontWeight: 700 }}>{form.amount}</span></div>
               {form.roi && <div><span style={{ color: T.textFaint }}>ROI: </span><span style={{ color: T.text }}>{form.roi}</span></div>}
@@ -1590,27 +1664,45 @@ function CertificatesSection({certificates, setCertificates, addAuditLog }) {
           </div>
         )}
 
-        {selectedSubId && (
+        {(selectedSubId || editingId) && (
           <>
+            {editingId && (
+              <>
+                <Field label="Product Name">
+                  <AInput value={form.productName || ''} onChange={e => set('productName', e.target.value)} />
+                </Field>
+                <Field label="Amount">
+                  <AInput value={form.amount || ''} onChange={e => set('amount', e.target.value)} />
+                </Field>
+                <Field label="Expected ROI">
+                  <AInput value={form.roi || ''} onChange={e => set('roi', e.target.value)} placeholder="e.g. ~14-18% p.a." />
+                </Field>
+              </>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Field label="Issue Date">
                 <AInput type="date" value={form.issueDate || ''} onChange={e => set('issueDate', e.target.value)} />
               </Field>
               <Field label="Maturity Date *">
                 <AInput type="date" value={form.maturityDate || ''} onChange={e => set('maturityDate', e.target.value)}
-                  min={new Date().toISOString().split('T')[0]} />
+                  min={editingId ? undefined : new Date().toISOString().split('T')[0]} />
               </Field>
             </div>
-            <Field label="Override Email (optional)">
-              <AInput type="email" value={form.clientEmail || ''} onChange={e => set('clientEmail', e.target.value)}
-                placeholder="Leave blank to use registered email" />
-            </Field>
+            {!editingId && (
+              <Field label="Override Email (optional)">
+                <AInput type="email" value={form.clientEmail || ''} onChange={e => set('clientEmail', e.target.value)}
+                  placeholder="Leave blank to use registered email" />
+              </Field>
+            )}
           </>
         )}
 
+        {formError && <p style={{ color: '#ef4444', fontSize: 13, marginTop: 8 }}>{formError}</p>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
           <ABtn outline onClick={closeModal}>Cancel</ABtn>
-          <ABtn onClick={issue} disabled={!selectedSubId || !form.maturityDate}>Issue Certificate</ABtn>
+          <ABtn onClick={issue} disabled={saving || (!editingId && (!selectedSubId || !form.maturityDate))}>
+            {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Issue Certificate'}
+          </ABtn>
         </div>
       </Modal>
     </div>
@@ -4032,12 +4124,13 @@ export default function AdminPanel() {
     instruments, fetchInstruments, renameInstrument,
     auditLog, addAuditLog,
     // Real data from backend
-    clients, kycSubmissions, subscriptions, redemptions, announcements,
+    clients, kycSubmissions, subscriptions, redemptions, announcements, certificates,
     // Fetchers
-    fetchClients, fetchKyc, fetchSubscriptions, fetchRedemptions,
+    fetchClients, fetchKyc, fetchSubscriptions, fetchRedemptions, fetchCertificates,
     fetchAuditLog, fetchJuniorAdmins, fetchStaffRoles, fetchWorkflows, fetchMyTasks, fetchAnnouncements,
     // Actions
     overrideKyc, activateSubscription, denySubscription, processRedemption,
+    createCertificate, updateCertificate,
   } = useAdmin()
   const navigate = useNavigate()
   const [active, setActive] = useState('dashboard')
@@ -4067,6 +4160,7 @@ export default function AdminPanel() {
         fetchWorkflows(),
         fetchMyTasks(),
         fetchAnnouncements(),
+        fetchCertificates(),
       ])
       setLoading(false)
     }
@@ -4079,8 +4173,6 @@ export default function AdminPanel() {
   const setClients = () => {}      // no-op — data comes from backend now
   const setSubscriptions = () => {}
   const setRedemptions = () => {}
-  const certificates = []
-  const setCertificates = () => {}
   const setAnnouncements = () => {}
 
   if (!admin) return null
@@ -4101,7 +4193,7 @@ export default function AdminPanel() {
       case 'kyc':           return <KycSection kycData={kycData} setKycData={setKycData} addAuditLog={addAuditLog} />
       case 'subscriptions': return <SubscriptionsSection subscriptions={subscriptions} setSubscriptions={setSubscriptions} addAuditLog={addAuditLog} />
       case 'redemptions':   return <RedemptionsSection redemptions={redemptions} setRedemptions={setRedemptions} addAuditLog={addAuditLog} />
-      case 'certificates':  return <CertificatesSection certificates={certificates} setCertificates={setCertificates} addAuditLog={addAuditLog} />
+      case 'certificates':  return <CertificatesSection certificates={certificates} createCertificate={createCertificate} updateCertificate={updateCertificate} addAuditLog={addAuditLog} />
       case 'maturity':      return <MaturitySection subscriptions={subscriptions} />
       case 'nav':           return <NavSection />
       case 'payments':      return <PaymentAccountsSection addAuditLog={addAuditLog} />

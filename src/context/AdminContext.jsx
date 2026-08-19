@@ -43,6 +43,7 @@ export function AdminProvider({ children }) {
   const [myTasks, setMyTasks] = useState([])
   const [portfolioHoldings, setPortfolioHoldings] = useState([])   // holdings for the currently-selected portfolio
   const [valuationHistory, setValuationHistory] = useState([])     // history for the currently-selected portfolio
+  const [certificates, setCertificates] = useState([])
   const [instruments, setInstruments] = useState([])               // master list of tradeable instruments
   const [systemSettings, setSystemSettings] = useState({})
   const [companySettings, setCompanySettings] = useState({})
@@ -235,6 +236,16 @@ export function AdminProvider({ children }) {
     }
   }, [])
 
+  const fetchCertificates = useCallback(async (statusFilter = null) => {
+    try {
+      const url = statusFilter ? `/admin/certificates?status_filter=${statusFilter}` : '/admin/certificates'
+      const res = await adminApi.get(url)
+      setCertificates(res.data)
+    } catch (err) {
+      console.error('fetchCertificates failed:', err.response?.status)
+    }
+  }, [])
+
   const fetchProducts = useCallback(async () => {
     try {
       const res = await adminApi.get('/admin/products')
@@ -349,9 +360,10 @@ export function AdminProvider({ children }) {
       fetchSubscriptions()
       fetchRedemptions()
       fetchMyTasks()
+      fetchCertificates()
     }, 30_000)
     return () => clearInterval(id)
-  }, [admin, fetchKyc, fetchSubscriptions, fetchRedemptions, fetchMyTasks])
+  }, [admin, fetchKyc, fetchSubscriptions, fetchRedemptions, fetchMyTasks, fetchCertificates])
 
   // ── KYC Actions ────────────────────────────────────────────────────────────
   const overrideKyc = async (kycId, action, reason = '') => {
@@ -384,6 +396,19 @@ export function AdminProvider({ children }) {
     if (salePrice != null) params.sale_price = salePrice
     await adminApi.patch(`/admin/redemptions/${redemptionId}/process`, null, { params })
     await fetchRedemptions()
+  }
+
+  // ── Certificate Actions ────────────────────────────────────────────────────
+  const createCertificate = async (data) => {
+    const res = await adminApi.post('/admin/certificates', data)
+    await fetchCertificates()
+    return res.data
+  }
+
+  const updateCertificate = async (id, data) => {
+    const res = await adminApi.patch(`/admin/certificates/${id}`, data)
+    await fetchCertificates()
+    return res.data
   }
 
   // ── Product Actions ────────────────────────────────────────────────────────
@@ -684,7 +709,7 @@ export function AdminProvider({ children }) {
       clients, kycSubmissions, subscriptions, redemptions,
       products, announcements, auditLog, juniorAdmins, staffRoles,
       workflows, myTasks, systemSettings, companySettings,
-      portfolioHoldings, valuationHistory, instruments,
+      portfolioHoldings, valuationHistory, instruments, certificates,
 
       // Fetchers
       fetchClients, fetchKyc, fetchSubscriptions, fetchRedemptions,
@@ -692,6 +717,7 @@ export function AdminProvider({ children }) {
       fetchWorkflows, fetchMyTasks,
       fetchPortfolioHoldings, fetchValuationHistory,
       fetchAnnouncements, fetchSystemSettings, fetchCompanySettings,
+      fetchCertificates,
 
       // KYC
       overrideKyc,
@@ -701,6 +727,9 @@ export function AdminProvider({ children }) {
 
       // Redemptions
       processRedemption,
+
+      // Certificates
+      createCertificate, updateCertificate,
 
       // Products
       createProduct, updateProduct, deleteProduct,
