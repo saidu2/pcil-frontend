@@ -1000,7 +1000,14 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold font-serif" style={{ color: '#A67C1A' }}>{user?.name || 'Investor'}</h1>
           </div>
           <div className="flex gap-3 flex-wrap">
-            {isApproved && activeSubscriptions.length > 0 && (
+            {/* allActiveSubscriptions, not activeSubscriptions — the latter
+                deliberately excludes subscriptions that already have real
+                holdings, but the redeem modal itself needs to handle those
+                too (see its own "Uses allActiveSubscriptions" comment
+                below). Gating the button on the wrong list meant a client
+                whose only active subscription had become a private
+                portfolio could never see a way to open the modal at all. */}
+            {isApproved && allActiveSubscriptions.length > 0 && (
               <GoldButton outline onClick={() => setRedeemOpen(true)}>Redeem Investment</GoldButton>
             )}
             <Link to="/products"><GoldButton>Browse Products</GoldButton></Link>
