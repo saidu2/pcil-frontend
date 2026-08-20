@@ -651,6 +651,14 @@ export default function KYC() {
 
       // ── Core fields (dedicated DB columns) ───────────────────────────────
       const payload = {
+        // NEW — was only ever sent buried inside extra_data (a raw JSON
+        // blob the backend never unpacks), so the client's actual chosen
+        // account type never reached User.account_type at all — it stayed
+        // stuck at whatever it was set to on signup forever. Backend now
+        // reads this as a real top-level field. Lowercased to match the
+        // database enum ("individual"/"joint"/"minor"/"corporate") — the
+        // capitalized values here are only for this form's own display.
+        account_type:          accountType ? accountType.toLowerCase() : null,
         date_of_birth:         personal.dob || null,
         nationality:           personal.nationality || null,
         state:                 personal.state || null,
