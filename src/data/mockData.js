@@ -167,78 +167,77 @@ export const products = [
 export const PIE_COLORS = ['#B8860B', '#D4A017', '#8B6914', '#F0C040', '#c49a20', '#e8b84b']
 
 // ─── QUIZ ─────────────────────────────────────────────────────────────────────
+// Sourced directly from the PCIL Investor Risk Questionnaire document.
+// Only the genuinely single-choice, ascending-risk-ordered questions are
+// included — the document also has a holdings table, a checklist, a
+// ranking exercise, a knowledge grid, and a free-text section, none of
+// which fit a "pick one" screen or contribute a clean numeric score, so
+// they're intentionally not part of this scored quiz. Options keep the
+// document's own 1/2/3(/4) ordering — later option = higher risk score.
 
 export const quizQuestions = [
+  // ── Section B: Ability to Bear Risk ──────────────────────────────────
   {
-    q: 'What is your primary investment objective?',
+    section: 'Ability to Bear Risk',
+    q: 'What is your age range?',
+    options: ['Above 55 years', '35 to 55 years', 'Below 35'],
+  },
+  {
+    section: 'Ability to Bear Risk',
+    q: 'What is your estimated current financial position?',
+    options: ['Less than ₦50m', 'More than ₦50m but less than ₦400m', 'More than ₦400m'],
+  },
+  {
+    section: 'Ability to Bear Risk',
+    q: 'What portion of your estimated financial position is in liquid assets (cash, money market instruments and equities)?',
+    options: ['Less than 5%', 'More than 5% but less than 30%', 'More than 30%'],
+  },
+  {
+    section: 'Ability to Bear Risk',
+    q: 'What will be the use of proceeds of investments?',
+    options: ['To offset living expenses', 'Future needs & obligations', 'Speculative capital'],
+  },
+  {
+    section: 'Ability to Bear Risk',
+    q: 'What is your investment time horizon?',
+    options: ['0 – 5 years', '5 – 10 years', '10 – 20 years', 'More than 20 years'],
+  },
+  {
+    section: 'Ability to Bear Risk',
+    q: 'Please choose from the most applicable option:',
     options: [
-      'Protect my capital and earn steady returns',
-      'Grow my wealth steadily over time',
-      'Hedge against Naira depreciation and earn in US Dollars',
-      'Maximise long-term returns with active management',
+      'I will need access to my investments at any given point in time.',
+      'I will need to withdraw more than 50% to 70% of my investments in the next two to three years.',
+      'I do not need to withdraw my investments to meet my liquidity needs.',
+    ],
+  },
+
+  // ── Section C: Willingness to Take Risk ──────────────────────────────
+  {
+    section: 'Willingness to Take Risk',
+    q: 'What is your investment objective?',
+    options: [
+      'My core objective is to protect the value of my capital, e.g. fixed deposits and money market collective investment schemes managed by professionals.',
+      'My objective is to achieve moderate capital growth on my investments, e.g. partial exposure to equities or investment in an equity collective investment scheme managed by professionals.',
+      'My objective is to achieve substantial capital growth on my investments, e.g. direct investments in Equities.',
     ],
   },
   {
-    q: 'How long are you comfortable keeping your money invested?',
+    section: 'Willingness to Take Risk',
+    q: 'What is your perspective to risk?',
     options: [
-      'Less than 90 days',
-      '90 days to 1 year',
-      '1 to 3 years',
-      'More than 3 years',
+      'I am not comfortable in taking any investment risk.',
+      'I am only comfortable in taking a moderate level of investment risk, with indicative recovery period of 1 – 2 years.',
+      'I am willing to take high levels of investment risk, with comparable high return, with indicative recovery period of 3 – 5 years.',
     ],
   },
   {
-    q: 'How would you react if your investment returns were lower than expected in a given year?',
+    section: 'Willingness to Take Risk',
+    q: 'How would a decline in the value of your investments affect you?',
     options: [
-      'I would withdraw immediately, I cannot accept below-target returns',
-      'I would be concerned but would wait to see the next quarter',
-      'I understand returns can vary and would stay invested',
-      'I would invest more as lower returns today mean a better opportunity',
-    ],
-  },
-  {
-    q: 'Which currency would you prefer your investment to be denominated in?',
-    options: [
-      'Nigerian Naira only',
-      'US Dollar only',
-      'I am open to either currency',
-      'I would like to split between both currencies',
-    ],
-  },
-  {
-    q: 'Do you have any preference for Islamic (Sharia-compliant) investments?',
-    options: [
-      'I require Sharia-compliant investments only',
-      'I prefer Sharia-compliant where possible',
-      'No preference, conventional is fine',
-      'I prefer conventional investments only',
-    ],
-  },
-  {
-    q: 'How involved do you want to be in deciding how your money is invested?',
-    options: [
-      'I want Prime Capital to manage everything on my behalf',
-      'I want to provide direction on how my funds are allocated',
-      'I am not sure and would like guidance',
-      'I am comfortable with either approach',
-    ],
-  },
-  {
-    q: 'What proportion of your savings are you planning to invest?',
-    options: [
-      'Less than 10 percent',
-      '10 to 25 percent',
-      '25 to 50 percent',
-      'More than 50 percent',
-    ],
-  },
-  {
-    q: 'Which best describes your income and investor profile?',
-    options: [
-      'Fixed salary or pension with preference for predictable returns',
-      'Salary plus other income and comfortable with moderate risk',
-      'Business owner or entrepreneur seeking growth',
-      'High Net Worth Individual or institutional investor seeking premium products',
+      'I am not willing to accept declines in the value of my investment as capital preservation is my primary objective.',
+      'I am willing to accept moderate declines, but I am not comfortable with extreme drops in the value of my investments.',
+      'I am prepared to take losses and large fluctuations in the value of my investments in order to maximize my long-term returns.',
     ],
   },
 ]
