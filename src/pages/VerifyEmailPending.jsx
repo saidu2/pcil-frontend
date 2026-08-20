@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { GoldButton, Card } from '../components/UI'
 import { useAuth } from '../context/AuthContext'
@@ -6,12 +6,45 @@ import { useAuth } from '../context/AuthContext'
 export default function VerifyEmailPending() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout, resendVerification } = useAuth()
+  const { user, logout, resendVerification, fetchMe } = useAuth()
   const email = location.state?.email
 
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [checking, setChecking] = useState(false)
+
+  // The emailed link is commonly opened somewhere other than this tab —
+  // the email app's own in-app browser, a different device, etc. — so
+  // this tab has no way to know verification happened unless it actively
+  // checks. Poll quietly in the background so the user isn't stuck here
+  // forever after verifying elsewhere.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchMe().catch(() => {})
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [fetchMe])
+
+  useEffect(() => {
+    if (user?.isVerified) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user?.isVerified, navigate])
+
+  const handleCheckNow = async () => {
+    setChecking(true)
+    setError('')
+    try {
+      await fetchMe()
+      // The effect above redirects automatically once isVerified is true —
+      // if we're still here after this, it genuinely isn't verified yet.
+    } catch {
+      setError('Could not check your status right now. Please try again.')
+    } finally {
+      setChecking(false)
+    }
+  }
 
   const handleResend = async () => {
     setError('')
@@ -67,6 +100,16 @@ export default function VerifyEmailPending() {
               {sending ? 'Sending…' : 'Resend confirmation email'}
             </GoldButton>
           )}
+
+          <button
+            type="button"
+            onClick={handleCheckNow}
+            disabled={checking}
+            className="text-sm hover:underline w-full"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {checking ? 'Checking…' : "Already clicked the link? Check now"}
+          </button>
 
           <button
             type="button"

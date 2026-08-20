@@ -214,7 +214,17 @@ export function AuthProvider({ children }) {
   // ── Email verification (NEW) ────────────────────────────────────────────
   const verifyEmail = async (token) => {
     const { data } = await api.post('/auth/verify-email', { token })
-    await fetchMe()   // refresh so isVerified updates immediately
+    // fetchMe() needs an active session in THIS browser — but the emailed
+    // link is very often opened somewhere else entirely (the email app's
+    // own in-app browser, not the one used to sign up). Verification
+    // itself already succeeded above regardless of that, so a failure
+    // here must never be treated as verification having failed — it just
+    // means this particular browser has no session to refresh.
+    try {
+      await fetchMe()
+    } catch {
+      // No session in this browser — fine, verification still succeeded.
+    }
     return data
   }
 
