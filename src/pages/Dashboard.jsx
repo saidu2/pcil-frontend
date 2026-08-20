@@ -1053,6 +1053,15 @@ export default function Dashboard() {
 
         {/* Stat Cards — one row per currency */}
         {/* NGN row — only shown if client has NGN investments */}
+        {/* This row only ever contains subscriptions with NO real holdings
+            yet (activeSubscriptions deliberately excludes anything with a
+            real portfolio — see the "Valued" section above for those).
+            There is no automatic growth formula here anymore — Total
+            Returns is always ₦0 and Portfolio Value always equals Total
+            Invested, until a portfolio manager actually builds real
+            holdings for a subscription, at which point it moves up into
+            the "Valued" section instead. Labels/copy reflect that
+            directly rather than implying returns are quietly accruing. */}
         {(!isApproved || ngnSubs.length > 0) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-4">
             <StatCard icon="💼" label="Total Invested (₦)"
@@ -1060,14 +1069,14 @@ export default function Dashboard() {
               sub={ngnSubs.length > 0 ? `${ngnSubs.length} active NGN product${ngnSubs.length !== 1 ? 's' : ''}` : 'No active NGN investments'}
               trend={ngnSubs.length > 0 ? `${ngnSubs.length} Active` : null}
               trendUp locked={!isApproved} />
-            <StatCard icon="📈" label="Total Returns (₦ · Projected)"
+            <StatCard icon="📈" label="Total Returns (₦)"
               value={!isApproved ? '₦0.00' : totalReturnsNgn > 0 ? `+${fmtNgn(totalReturnsNgn)}` : '₦0.00'}
-              sub={returnPctNgn && totalReturnsNgn > 0 ? `${returnPctNgn}% projected · based on stated ROI` : 'Returns accrue on active investments'}
+              sub="Shown once your portfolio manager adds real holdings to your account"
               trend={returnPctNgn && totalReturnsNgn > 0 ? `+${returnPctNgn}%` : null}
               trendUp locked={!isApproved} />
-            <StatCard icon="🏦" label="Portfolio Value (₦ · Projected)"
+            <StatCard icon="🏦" label="Portfolio Value (₦)"
               value={!isApproved ? '₦0.00' : portfolioValueNgn > 0 ? fmtNgn(portfolioValueNgn) : '₦0.00'}
-              sub="Principal + projected returns · indicative only"
+              sub="Awaiting portfolio setup — equals amount invested until holdings are added"
               trend={returnPctNgn && portfolioValueNgn > 0 ? `+${returnPctNgn}%` : null}
               trendUp locked={!isApproved} />
           </div>
@@ -1081,14 +1090,14 @@ export default function Dashboard() {
               sub={`${usdSubs.length} active USD product${usdSubs.length !== 1 ? 's' : ''}`}
               trend={`${usdSubs.length} Active`}
               trendUp />
-            <StatCard icon="📈" label="Total Returns ($ · Projected)"
+            <StatCard icon="📈" label="Total Returns ($)"
               value={totalReturnsUsd > 0 ? `+$${(totalReturnsUsd >= 1000 ? `${(totalReturnsUsd / 1000).toFixed(2)}K` : Math.round(totalReturnsUsd).toLocaleString())}` : '$0.00'}
-              sub={returnPctUsd && totalReturnsUsd > 0 ? `${returnPctUsd}% projected · based on stated ROI` : 'Returns accrue on active investments'}
+              sub="Shown once your portfolio manager adds real holdings to your account"
               trend={returnPctUsd && totalReturnsUsd > 0 ? `+${returnPctUsd}%` : null}
               trendUp />
-            <StatCard icon="🏦" label="Portfolio Value ($ · Projected)"
+            <StatCard icon="🏦" label="Portfolio Value ($)"
               value={`$${portfolioValueUsd > 0 ? (portfolioValueUsd >= 1000 ? `${(portfolioValueUsd / 1000).toFixed(2)}K` : Math.round(portfolioValueUsd).toLocaleString()) : '0.00'}`}
-              sub="Principal + projected returns · indicative only"
+              sub="Awaiting portfolio setup — equals amount invested until holdings are added"
               trend={returnPctUsd && portfolioValueUsd > 0 ? `+${returnPctUsd}%` : null}
               trendUp />
           </div>
