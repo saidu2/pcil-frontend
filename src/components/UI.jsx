@@ -10,7 +10,7 @@ export function GoldButton({ children, onClick, outline, className = '', type = 
       style={outline
         ? { border: '1.5px solid #B8860B', color: '#B8860B', background: 'transparent' }
         : { background: 'linear-gradient(135deg, #B8860B, #D4A017)', color: '#000' }}
-      className={`${sizes[size]} rounded-xl font-semibold transition-all hover:opacity-85 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
+      className={`${sizes[size]} rounded-xl font-semibold transition-all hover:opacity-85 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center ${className}`}
     >
       {children}
     </button>
@@ -136,7 +136,74 @@ export function Modal({ open, onClose, title, children }) {
 export function Spinner() {
   return (
     <div className="flex items-center justify-center py-12">
-      <div className="w-8 h-8 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin" />
+      <RadialSpinner size={40} />
+    </div>
+  )
+}
+
+// ─── RADIAL SPINNER ───────────────────────────────────────────────────────────
+// 12 tapered gold blades, each fading in turn to create a radiating,
+// rotating look (matches the brand's loading reference art). Built from
+// 12 static bars whose opacity cycles on a staggered delay, rather than a
+// single spinning ring — reads as "radiating" rather than just "spinning".
+// Works on both light and dark backgrounds: the lit blade uses the bright
+// brand gold, the trailing blades fade toward transparent rather than
+// toward a fixed grey, so it never clashes with either theme's background.
+let _radialSpinnerStyleInjected = false
+function ensureRadialSpinnerStyles() {
+  if (_radialSpinnerStyleInjected || typeof document === 'undefined') return
+  _radialSpinnerStyleInjected = true
+  const style = document.createElement('style')
+  style.textContent = `
+    @keyframes radial-spinner-fade {
+      0%   { opacity: 1; }
+      100% { opacity: 0.15; }
+    }
+    .radial-spinner-blade {
+      animation: radial-spinner-fade 1s linear infinite;
+      transform-origin: center;
+    }
+  `
+  document.head.appendChild(style)
+}
+
+export function RadialSpinner({ size = 40, label }) {
+  ensureRadialSpinnerStyles()
+  const blades = Array.from({ length: 12 })
+  const cx = 50, cy = 50
+  const outerR = 44, innerR = 22
+  return (
+    <div className="flex flex-col items-center justify-center gap-3" role="status" aria-label={label || 'Loading'}>
+      <svg width={size} height={size} viewBox="0 0 100 100" style={{ filter: 'drop-shadow(0 0 6px rgba(212,160,23,0.45))' }}>
+        <defs>
+          <linearGradient id="radial-spinner-gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#D4A017" />
+            <stop offset="100%" stopColor="#B8860B" />
+          </linearGradient>
+        </defs>
+        {blades.map((_, i) => {
+          const angle = (360 / blades.length) * i
+          return (
+            <rect
+              key={i}
+              className="radial-spinner-blade"
+              x={cx - 3}
+              y={cy - outerR}
+              width={6}
+              height={outerR - innerR}
+              rx={3}
+              fill="url(#radial-spinner-gold)"
+              transform={`rotate(${angle} ${cx} ${cy})`}
+              style={{ animationDelay: `${-(i * (1 / blades.length))}s` }}
+            />
+          )
+        })}
+      </svg>
+      {label && (
+        <span className="text-xs font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>
+          {label}
+        </span>
+      )}
     </div>
   )
 }

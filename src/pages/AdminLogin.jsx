@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAdmin } from '../context/AdminContext'
+import { RadialSpinner } from '../components/UI'
 
 const G = '#A67C1A'
 
@@ -101,8 +102,9 @@ export default function AdminLogin() {
                 background: `linear-gradient(135deg,${G},#D4A017)`,
                 color: '#000', fontWeight: 700, fontSize: 14,
                 opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {loading ? 'Verifying…' : 'Verify'}
+                {loading ? <RadialSpinner size={20} /> : 'Verify'}
               </button>
 
               <button onClick={() => { setMfaMode(false); setMfaCode(''); setError('') }} style={{
@@ -157,8 +159,9 @@ export default function AdminLogin() {
             background: `linear-gradient(135deg,${G},#D4A017)`,
             color: '#000', fontWeight: 700, fontSize: 14,
             opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            {loading ? 'Signing in…' : 'Sign In to Admin'}
+            {loading ? <RadialSpinner size={20} /> : 'Sign In to Admin'}
           </button>
             </>
           )}

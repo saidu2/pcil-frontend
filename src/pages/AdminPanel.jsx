@@ -55,7 +55,7 @@ const SECTIONS = [
 
 // ── Shared UI ─────────────────────────────────────────────────────────────────
 
-// Minimal theme stub — keeps dark theme constants accessible to any section that calls useTheme()
+// Minimal theme stub · keeps dark theme constants accessible to any section that calls useTheme()
 const ThemeCtx = React.createContext({ dark: true, T: null })
 const useTheme = () => React.useContext(ThemeCtx)
 
@@ -78,7 +78,7 @@ const LIGHT = {
   navDefault: '#64748b', navHover: '#1e293b',
 }
 
-// inputCls is used inline in a few places — kept as a function so it reads T
+// inputCls is used inline in a few places · kept as a function so it reads T
 const mkInputCls = (T) => ({
   width: '100%', padding: '9px 13px',
   background: T.inputBg, border: `1px solid ${T.border2}`,
@@ -212,7 +212,7 @@ const Field = ({ label, children }) => {
   )
 }
 
-// ── ReceiptCell — fetches receipt from backend and shows inline ───────────
+// ── ReceiptCell · fetches receipt from backend and shows inline ───────────
 function ReceiptCell({subscriptionId, hasReceipt }) {
   const { T = DARK } = useTheme()
   const [open, setOpen] = useState(false)
@@ -228,7 +228,7 @@ function ReceiptCell({subscriptionId, hasReceipt }) {
     try {
       // Get admin token from module scope (set during admin login)
       const headers = { 'Content-Type': 'application/json' }
-      // Try to get token from AdminContext — stored in module variable
+      // Try to get token from AdminContext · stored in module variable
       const _tok = sessionStorage.getItem('pcil-admin-token'); if (_tok) headers['Authorization'] = `Bearer ${_tok}`
       const res = await fetch(`${BASE}/admin/subscriptions/${subscriptionId}/receipt`, {
         headers, credentials: 'include'
@@ -241,7 +241,7 @@ function ReceiptCell({subscriptionId, hasReceipt }) {
     finally { setLoading(false) }
   }
 
-  if (!hasReceipt) return <span style={{ color: T.textFaint, fontSize: 12 }}>—</span>
+  if (!hasReceipt) return <span style={{ color: T.textFaint, fontSize: 12 }}>N/A</span>
 
   const isImage = data?.mime_type?.startsWith('image/')
   const isPdf = data?.mime_type === 'application/pdf'
@@ -293,7 +293,7 @@ function ReceiptCell({subscriptionId, hasReceipt }) {
 
 function Dashboard({clients, subscriptions, kyc, redemptions }) {
   const { T = DARK } = useTheme()
-  // TODO: replace hardcoded 1600 with usd_ngn_rate fetched from fee_config table in DB — see PrimeCapital Context doc, Pending Development Work section
+  // TODO: replace hardcoded 1600 with usd_ngn_rate fetched from fee_config table in DB · see PrimeCapital Context doc, Pending Development Work section
   const totalAUM = subscriptions.filter(s => s.status === 'active').reduce((a, s) => a + (s.currency === 'NGN' ? s.amount : s.amount * 1600), 0)
   const pendingKyc = kyc.filter(k => k.status === 'pending').length
   const activeInvestments = subscriptions.filter(s => s.status === 'active').length
@@ -301,7 +301,7 @@ function Dashboard({clients, subscriptions, kyc, redemptions }) {
 
   const { auditLog } = useAdmin()
   const recentActivity = (auditLog || []).slice(0, 8).map(a => ({
-    label: `${a.action}${a.target ? ' — ' + a.target : ''}`,
+    label: `${a.action}${a.target ? ' · ' + a.target : ''}`,
     by: a.performed_by_name || 'System',
     time: new Date(a.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
     type: a.action_type || 'admin',
@@ -402,7 +402,7 @@ function ProductsSection({addAuditLog }) {
     const currencySign = currency === 'USD' ? '$' : '₦'
     const minDisplay = form.minAmountDisplay || form.min_amount_display ||
       (minAmt ? `${currencySign}${minAmt.toLocaleString()}` : '')
-    // features is List[str] in backend — ensure we send array not string
+    // features is List[str] in backend · ensure we send array not string
     const rawFeatures = form.features
     const featuresArr = Array.isArray(rawFeatures)
       ? rawFeatures
@@ -466,7 +466,7 @@ function ProductsSection({addAuditLog }) {
                 {!(p.is_active ?? !p.inactive) && <span style={{ background: T.border2, color: T.textDim, fontSize: 10, padding: '2px 8px', borderRadius: 999 }}>INACTIVE</span>}
               </div>
               <div style={{ color: T.textDim, fontSize: 12 }}>
-                {p.category}{p.management_type ? ` · ${p.management_type.replace('_',' ')}` : ''} · {p.roi} · Min: {p.min_amount_display || p.minAmountDisplay || '—'} · {p.currency}
+                {p.category}{p.management_type ? ` · ${p.management_type.replace('_',' ')}` : ''} · {p.roi} · Min: {p.min_amount_display || p.minAmountDisplay || 'N/A'} · {p.currency}
               </div>
               {p.payment_account && (
                 <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -583,7 +583,7 @@ function ClientsSection({clients, setClients, addAuditLog }) {
   const [createError, setCreateError] = useState('')
   const [createdResult, setCreatedResult] = useState(null) // { email, temp_password } shown once after success
 
-  // Client password reset — same one-time-reveal pattern as account creation
+  // Client password reset · same one-time-reveal pattern as account creation
   const [clientResetTarget, setClientResetTarget] = useState(null)
   const [clientResetResult, setClientResetResult] = useState(null)
   const [clientResetLoading, setClientResetLoading] = useState(false)
@@ -649,7 +649,7 @@ function ClientsSection({clients, setClients, addAuditLog }) {
   const getTotalInvested = (userId) =>
     subscriptions
       .filter(s => String(s.user_id) === String(userId) && s.status === 'active')
-      // TODO: replace hardcoded 1600 with usd_ngn_rate fetched from fee_config table in DB — see PrimeCapital Context doc, Pending Development Work section
+      // TODO: replace hardcoded 1600 with usd_ngn_rate fetched from fee_config table in DB · see PrimeCapital Context doc, Pending Development Work section
       .reduce((sum, s) => sum + (s.currency === 'NGN' ? Number(s.amount) : Number(s.amount) * 1600), 0)
 
   const [overrideError, setOverrideError] = useState('')
@@ -687,13 +687,13 @@ function ClientsSection({clients, setClients, addAuditLog }) {
             const invested = getTotalInvested(k.user_id)
             return [
               <div>
-                <div style={{ color: T.text, fontWeight: 600 }}>{k.full_name || '—'}</div>
-                <div style={{ color: T.textDim, fontSize: 11 }}>{k.email || '—'}</div>
+                <div style={{ color: T.text, fontWeight: 600 }}>{k.full_name || 'N/A'}</div>
+                <div style={{ color: T.textDim, fontSize: 11 }}>{k.email || 'N/A'}</div>
               </div>,
-              <span style={{ textTransform: 'capitalize' }}>{k.account_type || '—'}</span>,
+              <span style={{ textTransform: 'capitalize' }}>{k.account_type || 'N/A'}</span>,
               <ABadge status={k.status} />,
-              invested > 0 ? `₦${(invested / 1_000_000).toFixed(2)}M` : '—',
-              k.submitted_at ? new Date(k.submitted_at).toLocaleDateString('en-GB') : '—',
+              invested > 0 ? `₦${(invested / 1_000_000).toFixed(2)}M` : 'N/A',
+              k.submitted_at ? new Date(k.submitted_at).toLocaleDateString('en-GB') : 'N/A',
               <div style={{ display: 'flex', gap: 6 }}>
                 <ABtn small outline onClick={() => { setSelected(k); setOverrideModal(true); setOverrideStatus(k.status); setOverrideReason(''); setOverrideError('') }}>Override KYC</ABtn>
                 <ABtn small outline onClick={() => setClientResetTarget(k)}>Reset Password</ABtn>
@@ -864,7 +864,7 @@ function KycDetailsModal({ k, onClose, onApprove, onDeny, actionLoading, T }) {
   const extra = k.extra_data || {}
 
   // BUGFIX: real account type lives in extra_data.account_type
-  // ('Individual'/'Minor'/'Joint'/'Corporate') — the flat k.account_type
+  // ('Individual'/'Minor'/'Joint'/'Corporate') · the flat k.account_type
   // column only ever says 'individual'/'corporate' and can't tell Minor
   // or Joint apart from a plain Individual account.
   const acctType = extra.account_type || (k.account_type === 'corporate' ? 'Corporate' : 'Individual')
@@ -872,13 +872,13 @@ function KycDetailsModal({ k, onClose, onApprove, onDeny, actionLoading, T }) {
 
   // BUGFIX: was showing k.full_name (the name used to sign up on the
   // portal) as THE name everywhere, which never changes between KYC
-  // submissions — made resubmissions look identical even when the client
+  // submissions · made resubmissions look identical even when the client
   // entered different details. Now shows the name actually typed into
   // the KYC form itself, with the portal signup name kept as a separate,
   // clearly-labeled reference row instead.
   const formName = isCorporate
-    ? (k.company_name || '—')
-    : [extra.title, extra.surname, extra.first_name, extra.other_name].filter(Boolean).join(' ') || k.full_name || '—'
+    ? (k.company_name || 'N/A')
+    : [extra.title, extra.surname, extra.first_name, extra.other_name].filter(Boolean).join(' ') || k.full_name || 'N/A'
 
   const Row = ({ label, value }) => value ? (
     <div style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: `1px solid ${T.border2}` }}>
@@ -938,9 +938,9 @@ function KycDetailsModal({ k, onClose, onApprove, onDeny, actionLoading, T }) {
           {k.denial_reason && <span style={{ color: '#ef4444', fontSize: 12 }}>{k.denial_reason}</span>}
         </div>
 
-        {/* Portal account reference — kept separate from the actual KYC form data below */}
+        {/* Portal account reference · kept separate from the actual KYC form data below */}
         <div style={{ background: T.inputBg, borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}>
-          <span style={{ color: T.textFaint, fontSize: 11 }}>Portal account: {k.full_name || '—'} · {k.email} {k.phone ? `· ${k.phone}` : ''}</span>
+          <span style={{ color: T.textFaint, fontSize: 11 }}>Portal account: {k.full_name || 'N/A'} · {k.email} {k.phone ? `· ${k.phone}` : ''}</span>
         </div>
 
         {!isCorporate && <>
@@ -1075,7 +1075,7 @@ function KycDetailsModal({ k, onClose, onApprove, onDeny, actionLoading, T }) {
                   Signatory {['A', 'B', 'C', 'D'][i] || i + 1}: {s.title || ''} {s.surname || ''} {s.firstName || s.first_name || ''}
                 </div>
                 <div style={{ color: T.textMuted, fontSize: 12 }}>
-                  {s.phone || '—'} {s.email ? `· ${s.email}` : ''} {s.idType || s.id_type ? `· ${s.idType || s.id_type}: ${s.idNumber || s.id_number || ''}` : ''}
+                  {s.phone || 'N/A'} {s.email ? `· ${s.email}` : ''} {s.idType || s.id_type ? `· ${s.idType || s.id_type}: ${s.idNumber || s.id_number || ''}` : ''}
                 </div>
               </div>
             ))}
@@ -1210,11 +1210,11 @@ function KycSection({kycData, setKycData, addAuditLog }) {
             const extra = k.extra_data || {}
             const acctType = extra.account_type || (k.account_type === 'corporate' ? 'Corporate' : 'Individual')
             const formName = acctType === 'Corporate'
-              ? (k.company_name || k.full_name || '—')
-              : [extra.title, extra.surname, extra.first_name].filter(Boolean).join(' ') || k.full_name || '—'
+              ? (k.company_name || k.full_name || 'N/A')
+              : [extra.title, extra.surname, extra.first_name].filter(Boolean).join(' ') || k.full_name || 'N/A'
             return [
               formName,
-              k.email || '—',
+              k.email || 'N/A',
               acctType,
               <ABadge status={k.status} />,
               k.submitted_at ? new Date(k.submitted_at).toLocaleDateString('en-GB') : <span style={{ color: T.textFaint, fontSize: 12 }}>Not submitted</span>,
@@ -1225,7 +1225,7 @@ function KycSection({kycData, setKycData, addAuditLog }) {
                       <ABtn small outline onClick={() => setDetailsModal(k)}>View Details</ABtn>
                       {k.status !== 'approved' && <ABtn small onClick={() => override(k, 'approved')} disabled={actionLoading === (k.kyc_id || k.id)}>{actionLoading === (k.kyc_id || k.id) ? '...' : 'Approve'}</ABtn>}
                       {/* Deny now always opens the details modal so a real reason
-                          is required — was previously hardcoding "Admin override"
+                          is required · was previously hardcoding "Admin override"
                           and skipping the reason prompt entirely from this row. */}
                       {k.status !== 'denied' && <ABtn small danger onClick={() => setDetailsModal(k)} disabled={actionLoading === (k.kyc_id || k.id)}>Deny</ABtn>}
                     </>
@@ -1308,8 +1308,8 @@ function SubscriptionsSection({subscriptions, setSubscriptions, addAuditLog }) {
         <Table
           cols={['Client', 'Product', 'Amount', 'Status', 'Submitted', 'Receipt', 'Actions']}
           rows={filtered.map(s => [
-            s.client_name || '—',
-            <div style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.product_name || '—'}</div>,
+            s.client_name || 'N/A',
+            <div style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.product_name || 'N/A'}</div>,
             `${s.currency === 'USD' ? '$' : '₦'}${Number(s.amount).toLocaleString()}`,
             <ABadge status={s.status} />,
             new Date(s.submitted_at || s.submittedAt).toLocaleDateString('en-GB'),
@@ -1349,7 +1349,7 @@ function RedemptionsSection({redemptions, setRedemptions, addAuditLog }) {
   const [actionError, setActionError] = useState('')
 
   // Equity redemptions need the real sale price before they can be
-  // completed — the backend rejects completion without one. Fixed-income
+  // completed · the backend rejects completion without one. Fixed-income
   // redemptions are unaffected and still complete with a single click.
   const [salePriceModal, setSalePriceModal] = useState(null) // the redemption row being priced, or null
   const [salePriceInput, setSalePriceInput] = useState('')
@@ -1393,14 +1393,14 @@ function RedemptionsSection({redemptions, setRedemptions, addAuditLog }) {
         <Table
           cols={['Client', 'Product / Holding', 'Amount', 'Penalty', 'Status', 'Requested', 'Actions']}
           rows={redemptions.map(r => [
-            r.client_name || r.clientName || '—',
+            r.client_name || r.clientName || 'N/A',
             r.holding_id
-              ? `${r.instrument_name || '—'} (${r.units_sold ?? '—'} units)`
-              : (r.product_name || r.productName || '—'),
+              ? `${r.instrument_name || 'N/A'} (${r.units_sold ?? 'N/A'} units)`
+              : (r.product_name || r.productName || 'N/A'),
             r.holding_id
               ? <span>{r.is_equity_estimate ? 'Est. ' : ''}₦{Number(r.amount || 0).toLocaleString()}</span>
               : `₦${Number(r.amount || 0).toLocaleString()}`,
-            (r.penalty_amount || r.penalty) > 0 ? <span style={{ color: '#ef4444' }}>₦{Number(r.penalty_amount || r.penalty).toLocaleString()}</span> : '—',
+            (r.penalty_amount || r.penalty) > 0 ? <span style={{ color: '#ef4444' }}>₦{Number(r.penalty_amount || r.penalty).toLocaleString()}</span> : 'N/A',
             <ABadge status={r.status} />,
             new Date(r.requested_at || r.requestedAt).toLocaleDateString('en-GB'),
             r.status === 'pending'
@@ -1420,7 +1420,7 @@ function RedemptionsSection({redemptions, setRedemptions, addAuditLog }) {
           <div className="space-y-4">
             <p className="text-sm" style={{ color: T.textMuted }}>
               Enter the actual price per unit the sale of {salePriceModal.units_sold} units executed at.
-              This determines the client's real proceeds and realized gain/loss — it cannot be changed after completing.
+              This determines the client's real proceeds and realized gain/loss · it cannot be changed after completing.
             </p>
             <AInput
               label="Sale Price (per unit)"
@@ -1518,7 +1518,7 @@ function CertificatesSection({certificates, createCertificate, updateCertificate
     setFormError('')
     try {
       if (editingId) {
-        // Client and subscription are fixed at issue time — only the
+        // Client and subscription are fixed at issue time · only the
         // certificate's own details can be corrected afterward.
         await updateCertificate(editingId, {
           account_type:  form.accountType,
@@ -1551,7 +1551,7 @@ function CertificatesSection({certificates, createCertificate, updateCertificate
   }
 
   // certificateGenerator.js expects camelCase fields matching the old local
-  // form shape — this maps a real, backend-persisted certificate record
+  // form shape · this maps a real, backend-persisted certificate record
   // into that shape rather than changing the (already-correct) generator.
   const toGeneratorShape = (cert) => ({
     reference:    cert.reference,
@@ -1586,7 +1586,7 @@ function CertificatesSection({certificates, createCertificate, updateCertificate
   }
 
   const handleEmail = (cert) => {
-    // Mock email send — wire to SendGrid when backend is ready
+    // Mock email send · wire to SendGrid when backend is ready
     setEmailSent(cert.id)
     addAuditLog('Certificate Emailed', cert.client_name, 'certificate')
     setTimeout(() => setEmailSent(null), 3000)
@@ -1601,8 +1601,8 @@ function CertificatesSection({certificates, createCertificate, updateCertificate
           cols={['Reference', 'Client', 'Product', 'Amount', 'Issue Date', 'Maturity', 'Status', 'Actions']}
           rows={allCerts.map(c => [
             <span style={{ color: G, fontSize: 12, fontFamily: 'monospace' }}>{c.reference}</span>,
-            c.client_name || '—', c.product_name || '—', c.amount || '—',
-            c.issue_date ? new Date(c.issue_date).toLocaleDateString('en-GB') : '—', c.maturity_date ? new Date(c.maturity_date).toLocaleDateString('en-GB') : '—',
+            c.client_name || 'N/A', c.product_name || 'N/A', c.amount || 'N/A',
+            c.issue_date ? new Date(c.issue_date).toLocaleDateString('en-GB') : 'N/A', c.maturity_date ? new Date(c.maturity_date).toLocaleDateString('en-GB') : 'N/A',
             <ABadge status={c.status} />,
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <ABtn small outline onClick={() => openEditModal(c)}>Edit</ABtn>
@@ -1628,7 +1628,7 @@ function CertificatesSection({certificates, createCertificate, updateCertificate
                 ? <option disabled>No active subscriptions</option>
                 : activeSubs.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.client_name || 'Unknown'} · {s.product_name || '—'} · {s.currency === 'USD' ? '$' : '₦'}{Number(s.amount).toLocaleString()}
+                    {s.client_name || 'Unknown'} · {s.product_name || 'N/A'} · {s.currency === 'USD' ? '$' : '₦'}{Number(s.amount).toLocaleString()}
                   </option>
                 ))
               }
@@ -1659,7 +1659,7 @@ function CertificatesSection({certificates, createCertificate, updateCertificate
               <div><span style={{ color: T.textFaint }}>Product: </span><span style={{ color: T.text }}>{form.productName}</span></div>
               <div><span style={{ color: T.textFaint }}>Amount: </span><span style={{ color: '#A67C1A', fontWeight: 700 }}>{form.amount}</span></div>
               {form.roi && <div><span style={{ color: T.textFaint }}>ROI: </span><span style={{ color: T.text }}>{form.roi}</span></div>}
-              <div><span style={{ color: T.textFaint }}>Email: </span><span style={{ color: T.textMuted }}>{form.clientEmail || '—'}</span></div>
+              <div><span style={{ color: T.textFaint }}>Email: </span><span style={{ color: T.textMuted }}>{form.clientEmail || 'N/A'}</span></div>
             </div>
           </div>
         )}
@@ -1805,7 +1805,7 @@ function SystemAlertSection() {
       )}
 
       {/* Config */}
-      <ACard style={{ maxWidth: 620 }}>
+      <ACard style={{ maxWidth: 900, width: '100%' }}>
         <div style={{ marginBottom: 20 }}>
           <p style={{ color: T.textDim, fontSize: 12, fontWeight: 600, marginBottom: 12 }}>SEVERITY LEVEL</p>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -1884,8 +1884,8 @@ function MaturitySection({subscriptions }) {
         <Table
           cols={['Client', 'Product', 'Amount', 'Maturity Date', 'Days Left']}
           rows={withDays.map(s => [
-            s.client_name || '—',
-            s.product_name || '—',
+            s.client_name || 'N/A',
+            s.product_name || 'N/A',
             `${s.currency === 'USD' ? '$' : '₦'}${Number(s.amount).toLocaleString()}`,
             new Date(s.maturity_date || s.maturityDate).toLocaleDateString('en-GB'),
             <span style={{ color: urgency(s.daysLeft), fontWeight: 700 }}>
@@ -1986,7 +1986,7 @@ function PaymentAccountsSection({ addAuditLog }) {
               {accounts.map(a => (
                 <ACard key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{a.bank} <span style={{ color: T.textDim, fontWeight: 400 }}>— {a.currency}</span></div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{a.bank} <span style={{ color: T.textDim, fontWeight: 400 }}>· {a.currency}</span></div>
                     <div style={{ fontSize: 13, marginTop: 2, opacity: 0.7 }}>{a.account_name}</div>
                     <div style={{ color: '#A67C1A', fontSize: 14, fontWeight: 700, marginTop: 2, fontFamily: 'monospace' }}>{a.account_number}</div>
                     {a.label && <div style={{ fontSize: 11, marginTop: 2, opacity: 0.5 }}>{a.label}</div>}
@@ -2006,8 +2006,8 @@ function PaymentAccountsSection({ addAuditLog }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Currency">
             <ASelect value={form.currency || 'NGN'} onChange={e => set('currency', e.target.value)}>
-              <option value="NGN">NGN — Nigerian Naira</option>
-              <option value="USD">USD — US Dollar</option>
+              <option value="NGN">NGN · Nigerian Naira</option>
+              <option value="USD">USD · US Dollar</option>
             </ASelect>
           </Field>
           <Field label="Label (optional)"><AInput value={form.label || ''} onChange={e => set('label', e.target.value)} placeholder="e.g. Naira Investments" /></Field>
@@ -2050,7 +2050,7 @@ function FeesSection({addAuditLog }) {
   return (
     <div>
       <SectionHeader title="Fees & Penalty Configuration" subtitle="Update without touching code" />
-      <ACard style={{ maxWidth: 560 }}>
+      <ACard style={{ maxWidth: 900, width: '100%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Field label="Premature Liquidation Penalty (%)">
             <AInput type="number" value={config.prematurePenalty} onChange={e => set('prematurePenalty', e.target.value)} />
@@ -2177,7 +2177,7 @@ function AnnouncementsSection({ announcements, setAnnouncements, addAuditLog }) 
                   </span>
                 </div>
                 <p style={{ color: T.textMuted, fontSize: 13, textAlign: 'justify', lineHeight: 1.7 }}>{a.body}</p>
-                <p style={{ color: T.textFaint, fontSize: 11, marginTop: 4 }}>{(a.published_at || a.publishedAt) ? new Date(a.published_at || a.publishedAt).toLocaleDateString('en-GB') : '—'}</p>
+                <p style={{ color: T.textFaint, fontSize: 11, marginTop: 4 }}>{(a.published_at || a.publishedAt) ? new Date(a.published_at || a.publishedAt).toLocaleDateString('en-GB') : 'N/A'}</p>
               </div>
               <ABtn small outline onClick={() => toggle(a.id)}>{(a.is_active ?? a.active) ? 'Hide' : 'Show'}</ABtn>
             </div>
@@ -2208,7 +2208,7 @@ function AnnouncementsSection({ announcements, setAnnouncements, addAuditLog }) 
 
 function ReportsSection({clients, subscriptions, redemptions }) {
   const { T = DARK } = useTheme()
-  // TODO: replace hardcoded 1600 with usd_ngn_rate fetched from fee_config table in DB — see PrimeCapital Context doc, Pending Development Work section
+  // TODO: replace hardcoded 1600 with usd_ngn_rate fetched from fee_config table in DB · see PrimeCapital Context doc, Pending Development Work section
   const totalAUM = subscriptions.filter(s => s.status === 'active').reduce((a, s) => a + (s.currency === 'NGN' ? s.amount : s.amount * 1600), 0)
   const totalRedeemed = redemptions.filter(r => r.status === 'completed').reduce((a, r) => a + r.amount, 0)
 
@@ -2280,8 +2280,8 @@ function AuditSection({auditLog }) {
           cols={['Action', 'Target', 'By', 'Type', 'Timestamp']}
           rows={filtered.map(a => [
             <span style={{ color: T.text, fontWeight: 600 }}>{a.action}</span>,
-            a.target || a.target_name || '—',
-            a.performed_by_name || a.by || '—',
+            a.target || a.target_name || 'N/A',
+            a.performed_by_name || a.by || 'N/A',
             <span style={{ color: typeColor[a.action_type || a.type] || '#aaa', fontSize: 12, fontWeight: 600 }}>{(a.action_type || a.type || 'general').toUpperCase()}</span>,
             new Date(a.timestamp || a.created_at).toLocaleString('en-GB'),
           ])}
@@ -2299,7 +2299,7 @@ function SettingsSection({addAuditLog }) {
   const [saved, setSaved] = useState(false)
   const set = (f, v) => setConfig(c => ({ ...c, [f]: v }))
 
-  // Client dashboard visibility toggle — reads real state from the backend
+  // Client dashboard visibility toggle · reads real state from the backend
   // rather than assuming a default, so the switch reflects what clients
   // actually see right now.
   const [showBreakdown, setShowBreakdown] = useState(true)
@@ -2339,7 +2339,7 @@ function SettingsSection({addAuditLog }) {
   return (
     <div>
       <SectionHeader title="System Settings & Branding" subtitle="Company info visible across the platform" />
-      <ACard style={{ maxWidth: 600 }}>
+      <ACard style={{ maxWidth: 900, width: '100%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <Field label="Company Name"><AInput value={config.name} onChange={e => set('name', e.target.value)} /></Field>
           <Field label="Short Name"><AInput value={config.shortName} onChange={e => set('shortName', e.target.value)} /></Field>
@@ -2364,7 +2364,7 @@ function SettingsSection({addAuditLog }) {
       </ACard>
 
       {/* ── Client Dashboard Visibility ─────────────────────────────────── */}
-      <ACard style={{ maxWidth: 600, marginTop: 16 }}>
+      <ACard style={{ maxWidth: 900, width: '100%', marginTop: 16 }}>
         <p style={{ color: T.text, fontWeight: 700, marginBottom: 4 }}>Client Dashboard Visibility</p>
         <p style={{ color: T.textMuted, fontSize: 12, marginBottom: 14 }}>
           Controls what clients can see about their private portfolio.
@@ -2466,7 +2466,7 @@ function AdminUsersSection({juniorAdmins, createJuniorAdmin, toggleJuniorAdmin, 
   }
 
   const create = () => {
-    // NOTE: backend's AdminUserCreate requires `full_name`, not `name` — form
+    // NOTE: backend's AdminUserCreate requires `full_name`, not `name` · form
     // field stays `name` for the input's sake, mapped here at submit time.
     createJuniorAdmin({
       full_name: form.name,
@@ -2490,7 +2490,7 @@ function AdminUsersSection({juniorAdmins, createJuniorAdmin, toggleJuniorAdmin, 
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg,${G},#D4A017)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: 16 }}>SS</div>
           <div>
             <div style={{ color: T.text, fontWeight: 700 }}>Saidu Safiyanu</div>
-            <div style={{ color: G, fontSize: 12 }}>Super Admin — Full Access</div>
+            <div style={{ color: G, fontSize: 12 }}>Super Admin · Full Access</div>
             <div style={{ color: T.textFaint, fontSize: 11 }}>admin@primecapital.ng</div>
           </div>
           <span style={{ marginLeft: 'auto', background: G, color: '#000', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999 }}>SUPER ADMIN</span>
@@ -2539,7 +2539,7 @@ function AdminUsersSection({juniorAdmins, createJuniorAdmin, toggleJuniorAdmin, 
         <Field label="Department"><AInput value={form.department} onChange={e => set('department', e.target.value)} placeholder="e.g. Compliance, Operations, Finance" /></Field>
         <Field label="Staff Role">
           <ASelect value={form.staff_role_id} onChange={e => set('staff_role_id', e.target.value)}>
-            <option value="">No role — assign later</option>
+            <option value="">No role · assign later</option>
             {(staffRoles || []).filter(r => r.is_active).map(r => (
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
@@ -2561,7 +2561,7 @@ function AdminUsersSection({juniorAdmins, createJuniorAdmin, toggleJuniorAdmin, 
             value={roleModal?.staff_role?.id || ''}
             onChange={e => setRoleModal(r => ({ ...r, staff_role: staffRoles.find(sr => sr.id === e.target.value) || null }))}
           >
-            <option value="">No role — unassigned</option>
+            <option value="">No role · unassigned</option>
             {(staffRoles || []).filter(r => r.is_active).map(r => (
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
@@ -2631,7 +2631,7 @@ function AdminUsersSection({juniorAdmins, createJuniorAdmin, toggleJuniorAdmin, 
     </div>
   )
 }
-// Manage StaffRole records — granular permission flags assigned to staff via
+// Manage StaffRole records · granular permission flags assigned to staff via
 // AdminUsersSection's "Assign Role" button. Super Admin only (backend-gated).
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2787,7 +2787,7 @@ function MyTasksSection({ myTasks, actOnTask, downloadKycPdf }) {
       <SectionHeader title="My Tasks" subtitle={`${myTasks.length} item${myTasks.length === 1 ? '' : 's'} awaiting your action`} />
 
       {myTasks.length === 0 ? (
-        <ACard><p style={{ color: T.textFaint, textAlign: 'center', padding: 20 }}>Nothing pending right now — you're all caught up.</p></ACard>
+        <ACard><p style={{ color: T.textFaint, textAlign: 'center', padding: 20 }}>Nothing pending right now · you're all caught up.</p></ACard>
       ) : myTasks.map(task => {
         const actions = (task.current_step_actions || '').split(',').map(a => a.trim()).filter(Boolean)
         return (
@@ -2807,7 +2807,7 @@ function MyTasksSection({ myTasks, actOnTask, downloadKycPdf }) {
                 {task.step_history?.length > 0 && (
                   <div style={{ marginTop: 8, fontSize: 11, color: T.textFaint }}>
                     {task.step_history.slice(-2).map((h, i) => (
-                      <div key={i}>Step {h.step} — {h.action} by {h.by} {h.note ? `("${h.note}")` : ''}</div>
+                      <div key={i}>Step {h.step} · {h.action} by {h.by} {h.note ? `("${h.note}")` : ''}</div>
                     ))}
                   </div>
                 )}
@@ -2830,7 +2830,7 @@ function MyTasksSection({ myTasks, actOnTask, downloadKycPdf }) {
         )
       })}
 
-      <Modal open={!!actionModal} onClose={closeAction} title={actionModal ? `${actionLabels[actionModal.action]} — ${actionModal.task.workflow_name}` : ''}>
+      <Modal open={!!actionModal} onClose={closeAction} title={actionModal ? `${actionLabels[actionModal.action]} · ${actionModal.task.workflow_name}` : ''}>
         <Field label="Note (optional)">
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
             placeholder="Add a note for the record..."
@@ -3144,9 +3144,9 @@ function WorkflowConfigSection({ workflows, createWorkflow, updateWorkflow, dele
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MY SECURITY SECTION (NEW) — staff MFA enrollment. Mandatory for staff
+// MY SECURITY SECTION (NEW) · staff MFA enrollment. Mandatory for staff
 // (nudged via mustSetupMfa after login), unlike the client-side version
-// which is optional. No "disable" option here by design — matches the
+// which is optional. No "disable" option here by design · matches the
 // backend, which doesn't expose an admin MFA disable endpoint.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3158,7 +3158,7 @@ function SecuritySection({ admin, adminMfaSetup, adminMfaVerify, adminChangePass
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // Change own password — staff previously had no way to do this at all, so
+  // Change own password · staff previously had no way to do this at all, so
   // a temp password issued by IT could never be replaced by its owner.
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
   const [pwLoading, setPwLoading] = useState(false)
@@ -3214,13 +3214,13 @@ function SecuritySection({ admin, adminMfaSetup, adminMfaVerify, adminChangePass
     <div>
       <SectionHeader title="My Security" subtitle="Two-factor authentication is mandatory for all staff accounts" />
 
-      <ACard style={{ maxWidth: 520 }}>
+      <ACard style={{ maxWidth: 900, width: '100%' }}>
         {success && <div style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 14 }}>{success}</div>}
         {error && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 14 }}>{error}</div>}
 
         {!admin?.mfa_enabled && !qrData && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 999 }}>Not yet enabled — required</span>
+            <span style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 999 }}>Not yet enabled · required</span>
             <ABtn onClick={startSetup} disabled={loading}>{loading ? 'Starting…' : 'Set Up 2FA'}</ABtn>
           </div>
         )}
@@ -3253,7 +3253,7 @@ function SecuritySection({ admin, adminMfaSetup, adminMfaVerify, adminChangePass
       </ACard>
 
       {/* ── Change Password ─────────────────────────────────────────────── */}
-      <ACard style={{ maxWidth: 520, marginTop: 16 }}>
+      <ACard style={{ maxWidth: 900, width: '100%', marginTop: 16 }}>
         <p style={{ color: T.text, fontWeight: 700, marginBottom: 4 }}>Change Password</p>
         {mustChangePassword ? (
           <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', padding: '10px 12px', borderRadius: 8, fontSize: 12, marginBottom: 14 }}>
@@ -3288,17 +3288,17 @@ function SecuritySection({ admin, adminMfaSetup, adminMfaVerify, adminChangePass
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PRIVATE PORTFOLIOS SECTION (NEW) — Investment Manager / IT Admin
+// PRIVATE PORTFOLIOS SECTION (NEW) · Investment Manager / IT Admin
 // Manage holdings per portfolio, enter closing prices in batch, run
 // valuations, view value history. Backend enforces can_manage_nav
-// regardless of what shows in this nav — visible here to any staff, but
+// regardless of what shows in this nav · visible here to any staff, but
 // actions will fail with a clear error if their role lacks the permission.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, fetchPortfolioHoldings, fetchValuationHistory, addHolding, redeemHolding, submitPrices, runValuation, editHolding, downloadPriceTemplate, uploadPrices, instruments, fetchInstruments, renameInstrument }) {
   const { T = DARK } = useTheme()
 
-  // Instruments master list — surfaces every instrument name in use so
+  // Instruments master list · surfaces every instrument name in use so
   // near-duplicates ("MTN Nigeria" vs "MTN Nigeria PLC") can be spotted and
   // merged, since a price entered under one name won't value the other.
   const [showInstruments, setShowInstruments] = useState(false)
@@ -3384,7 +3384,7 @@ function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, 
         instrument_name: holdingForm.instrument_name,
         // BUGFIX: start_date was already fully supported by the backend for
         // BOTH holding types (equity purchase date, fixed income placement
-        // date) but no form field ever collected it — every holding was
+        // date) but no form field ever collected it · every holding was
         // silently dated "today" regardless of when it was actually bought.
         start_date: holdingForm.start_date ? new Date(holdingForm.start_date).toISOString() : null,
       }
@@ -3671,7 +3671,7 @@ function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, 
           <ASelect value={selectedSubId} onChange={e => setSelectedSubId(e.target.value)}>
             <option value="">Choose a portfolio…</option>
             {subscriptions.filter(s => s.status === 'active').map(s => (
-              <option key={s.id} value={s.id}>{s.client_name || s.user?.full_name || 'Client'} — {s.product_name || s.productName || 'Portfolio'} ({s.reference})</option>
+              <option key={s.id} value={s.id}>{s.client_name || s.user?.full_name || 'Client'} · {s.product_name || s.productName || 'Portfolio'} ({s.reference})</option>
             ))}
           </ASelect>
         </Field>
@@ -3701,8 +3701,8 @@ function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, 
                   </div>
                   <div style={{ color: T.textMuted, fontSize: 11, marginTop: 2 }}>
                     {h.holding_type === 'equity'
-                      ? `${h.units} units @ ${h.cost_price} cost · purchased ${h.start_date ? new Date(h.start_date).toLocaleDateString('en-GB') : '—'}`
-                      : `₦${h.principal?.toLocaleString()} at ${h.roi_pct}% · placed ${h.start_date ? new Date(h.start_date).toLocaleDateString('en-GB') : '—'} · matures ${h.maturity_date ? new Date(h.maturity_date).toLocaleDateString('en-GB') : '—'}`}
+                      ? `${h.units} units @ ${h.cost_price} cost · purchased ${h.start_date ? new Date(h.start_date).toLocaleDateString('en-GB') : 'N/A'}`
+                      : `₦${h.principal?.toLocaleString()} at ${h.roi_pct}% · placed ${h.start_date ? new Date(h.start_date).toLocaleDateString('en-GB') : 'N/A'} · matures ${h.maturity_date ? new Date(h.maturity_date).toLocaleDateString('en-GB') : 'N/A'}`}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -3952,10 +3952,10 @@ function NavSection() {
     } catch (e) { setError(e.message) }
   }
 
-  const productName = (id) => products.find(p => p.id === id)?.name || '—'
-  const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'
-  const fmtNum  = (n, d = 2) => n != null ? Number(n).toLocaleString('en-NG', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—'
-  const fmtAUM  = (n) => n != null ? `₦${(n / 1_000_000).toFixed(2)}M` : '—'
+  const productName = (id) => products.find(p => p.id === id)?.name || 'N/A'
+  const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'
+  const fmtNum  = (n, d = 2) => n != null ? Number(n).toLocaleString('en-NG', { minimumFractionDigits: d, maximumFractionDigits: d }) : 'N/A'
+  const fmtAUM  = (n) => n != null ? `₦${(n / 1_000_000).toFixed(2)}M` : 'N/A'
 
   return (
     <div>
@@ -4019,12 +4019,12 @@ function NavSection() {
                   <td style={{ padding: '10px 12px' }}>
                     {r.return_pct != null
                       ? <span style={{ color: r.return_pct >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{r.return_pct >= 0 ? '+' : ''}{fmtNum(r.return_pct)}%</span>
-                      : <span style={{ color: '#444' }}>—</span>}
+                      : <span style={{ color: '#444' }}>N/A</span>}
                   </td>
                   <td style={{ padding: '10px 12px' }}>
                     {r.cumulative_pct != null
                       ? <span style={{ color: '#a78bfa', fontWeight: 600 }}>{fmtNum(r.cumulative_pct)}%</span>
-                      : <span style={{ color: '#444' }}>—</span>}
+                      : <span style={{ color: '#444' }}>N/A</span>}
                   </td>
                   <td style={{ padding: '10px 12px', color: T.textMuted }}>{fmtAUM(r.total_aum)}</td>
                   <td style={{ padding: '10px 12px' }}>
@@ -4170,14 +4170,14 @@ export default function AdminPanel() {
   // Use kycSubmissions as kycData for backward compat with section components
   const kycData = kycSubmissions
   const setKycData = () => {}
-  const setClients = () => {}      // no-op — data comes from backend now
+  const setClients = () => {}      // no-op · data comes from backend now
   const setSubscriptions = () => {}
   const setRedemptions = () => {}
   const setAnnouncements = () => {}
 
   if (!admin) return null
 
-  // 'dashboard' and 'mytasks' are always visible to any logged-in staff —
+  // 'dashboard' and 'mytasks' are always visible to any logged-in staff -
   // they're not part of the legacy section-permission list, and My Tasks
   // in particular is meaningless to gate since it's just "your own queue".
   const ALWAYS_VISIBLE = ['dashboard', 'mytasks', 'security']
@@ -4276,7 +4276,7 @@ export default function AdminPanel() {
               <div style={{ overflow: 'hidden' }}>
                 <div style={{ color: T.text, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{admin.full_name}</div>
                 <div style={{ color: G, fontSize: 10 }}>
-                  {isSuperAdmin ? 'Super Admin' : (admin.staff_role?.name || 'Staff — no role assigned')}
+                  {isSuperAdmin ? 'Super Admin' : (admin.staff_role?.name || 'Staff · no role assigned')}
                 </div>
               </div>
             </div>
@@ -4314,7 +4314,7 @@ export default function AdminPanel() {
           </div>
         </header>
 
-        {/* Temp password nudge — shown until they set their own */}
+        {/* Temp password nudge · shown until they set their own */}
         {mustChangePassword && active !== 'security' && (
           <div style={{ margin: '0 28px', marginTop: 16, padding: '12px 18px', borderRadius: 10, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <span style={{ color: '#ef4444', fontSize: 13, fontWeight: 600 }}>
@@ -4324,11 +4324,11 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* MFA setup nudge — mandatory for staff, shown until they enroll */}
+        {/* MFA setup nudge · mandatory for staff, shown until they enroll */}
         {mustSetupMfa && active !== 'security' && (
           <div style={{ margin: '0 28px', marginTop: 16, padding: '12px 18px', borderRadius: 10, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <span style={{ color: '#f59e0b', fontSize: 13, fontWeight: 600 }}>
-              🔒 Two-factor authentication is required for staff accounts — please set it up now.
+              🔒 Two-factor authentication is required for staff accounts · please set it up now.
             </span>
             <ABtn small onClick={() => setActive('security')}>Set Up 2FA</ABtn>
           </div>
