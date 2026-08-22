@@ -66,7 +66,7 @@ export default function AdminLogin() {
             Prime Capital
           </h1>
           <p style={{ color: '#444', fontSize: 13, marginTop: 4 }}>
-            {mfaMode ? 'Two-Factor Authentication' : 'Admin Portal — Restricted Access'}
+            {mfaMode ? 'Two-Factor Authentication' : 'Admin Portal · Restricted Access'}
           </p>
         </div>
 

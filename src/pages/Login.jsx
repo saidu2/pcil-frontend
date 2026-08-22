@@ -20,13 +20,30 @@ export default function Login() {
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
 
+  // Ensures the loading indicator is always on screen for at least this long,
+  // even if the request resolves (or fails validation) almost instantly.
+  // Without this, a very fast response can flip `loading` true -> false
+  // within the same tick, so the animation never actually gets painted.
+  const MIN_LOADING_MS = 450
+  const withMinLoading = async (fn) => {
+    const started = Date.now()
+    try {
+      return await fn()
+    } finally {
+      const elapsed = Date.now() - started
+      if (elapsed < MIN_LOADING_MS) {
+        await new Promise(r => setTimeout(r, MIN_LOADING_MS - elapsed))
+      }
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!form.email || !form.password) { setError('Please fill in all fields.'); return }
     setLoading(true)
     try {
-      const result = await login(form.email, form.password)
+      const result = await withMinLoading(() => login(form.email, form.password))
       if (result?.mfaRequired) {
         setMfaToken(result.mfaToken)
         setMfaMode(true)
@@ -51,7 +68,7 @@ export default function Login() {
     if (!mfaCode || mfaCode.length !== 6) { setError('Please enter the 6-digit code.'); return }
     setLoading(true)
     try {
-      const result = await loginMfaVerify(mfaToken, mfaCode)
+      const result = await withMinLoading(() => loginMfaVerify(mfaToken, mfaCode))
       if (result?.mustChangePassword) {
         navigate('/change-password', { replace: true, state: { from } })
       } else {
