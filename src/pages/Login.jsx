@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { GoldButton, Input, Card, RadialSpinner } from '../components/UI'
+import { GoldButton, Input, Card, LoadingIndicator } from '../components/UI'
 
 export default function Login() {
   const { login, loginMfaVerify } = useAuth()
@@ -92,7 +92,7 @@ export default function Login() {
                 <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-3 rounded-xl">{error}</div>
               )}
               <GoldButton type="submit" disabled={loading} className="w-full" size="lg">
-                {loading ? <RadialSpinner size={20} /> : 'Verify'}
+                {loading ? <LoadingIndicator size={18} label="Verifying" /> : 'Verify'}
               </GoldButton>
               <p className="text-center text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
                 <button type="button" onClick={() => { setMfaMode(false); setMfaCode(''); setError('') }}
@@ -115,7 +115,7 @@ export default function Login() {
               </div>
 
               <GoldButton type="submit" disabled={loading} className="w-full" size="lg">
-                {loading ? <RadialSpinner size={20} /> : 'Sign In'}
+                {loading ? <LoadingIndicator size={18} label="Signing in" /> : 'Sign In'}
               </GoldButton>
             </form>
           )}

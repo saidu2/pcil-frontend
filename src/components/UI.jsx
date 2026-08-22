@@ -136,76 +136,63 @@ export function Modal({ open, onClose, title, children }) {
 export function Spinner() {
   return (
     <div className="flex items-center justify-center py-12">
-      <RadialSpinner size={40} />
+      <LoadingIndicator size={40} />
     </div>
   )
 }
 
-// ─── RADIAL SPINNER ───────────────────────────────────────────────────────────
-// 12 tapered gold blades, each fading in turn to create a radiating,
-// rotating look (matches the brand's loading reference art). Built from
-// 12 static bars whose opacity cycles on a staggered delay, rather than a
-// single spinning ring — reads as "radiating" rather than just "spinning".
-// Works on both light and dark backgrounds: the lit blade uses the bright
-// brand gold, the trailing blades fade toward transparent rather than
-// toward a fixed grey, so it never clashes with either theme's background.
-let _radialSpinnerStyleInjected = false
-function ensureRadialSpinnerStyles() {
-  if (_radialSpinnerStyleInjected || typeof document === 'undefined') return
-  _radialSpinnerStyleInjected = true
-  const style = document.createElement('style')
-  style.textContent = `
-    @keyframes radial-spinner-fade {
-      0%   { opacity: 1; }
-      100% { opacity: 0.15; }
-    }
-    .radial-spinner-blade {
-      animation: radial-spinner-fade 1s linear infinite;
-      transform-origin: center;
-    }
-  `
-  document.head.appendChild(style)
-}
+// ─── LOADING INDICATOR ────────────────────────────────────────────────────────
+// A spinning hourglass paired with progressing dots ("Signing in.", "..", "...").
+// Deliberately simple and high-contrast rather than subtle — a small radiating
+// spinner tried earlier was too fine-grained to read as motion at button size.
+// Both pieces use plain CSS transform/opacity keyframes (no JS animation loop,
+// no injected global stylesheet) so they render reliably everywhere. Works on
+// both light and dark backgrounds since it uses the brand gold, not theme-vs-
+// background dependent colors.
+let _loadingDotIndex = 0 // not used for animation timing; kept for potential future variants
 
-export function RadialSpinner({ size = 40, label }) {
-  ensureRadialSpinnerStyles()
-  const blades = Array.from({ length: 12 })
-  const cx = 50, cy = 50
-  const outerR = 44, innerR = 22
+export function LoadingIndicator({ size = 22, label = 'Signing in', showLabel = true }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3" role="status" aria-label={label || 'Loading'}>
-      <svg width={size} height={size} viewBox="0 0 100 100" style={{ filter: 'drop-shadow(0 0 6px rgba(212,160,23,0.45))' }}>
-        <defs>
-          <linearGradient id="radial-spinner-gold" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#D4A017" />
-            <stop offset="100%" stopColor="#B8860B" />
-          </linearGradient>
-        </defs>
-        {blades.map((_, i) => {
-          const angle = (360 / blades.length) * i
-          return (
-            <rect
-              key={i}
-              className="radial-spinner-blade"
-              x={cx - 3}
-              y={cy - outerR}
-              width={6}
-              height={outerR - innerR}
-              rx={3}
-              fill="url(#radial-spinner-gold)"
-              transform={`rotate(${angle} ${cx} ${cy})`}
-              style={{ animationDelay: `${-(i * (1 / blades.length))}s` }}
-            />
-          )
-        })}
-      </svg>
-      {label && (
-        <span className="text-xs font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>
+    <span className="flex items-center justify-center gap-2" role="status" aria-label={label}>
+      <style>{`
+        @keyframes hourglass-flip {
+          0%   { transform: rotate(0deg); }
+          45%  { transform: rotate(180deg); }
+          55%  { transform: rotate(180deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .hourglass-spin {
+          display: inline-block;
+          animation: hourglass-flip 1.6s ease-in-out infinite;
+        }
+        @keyframes loading-dot-fade {
+          0%, 20%  { opacity: 0; }
+          50%      { opacity: 1; }
+          100%     { opacity: 0; }
+        }
+        .loading-dot {
+          animation: loading-dot-fade 1.4s ease-in-out infinite;
+        }
+        .loading-dot:nth-child(1) { animation-delay: 0s; }
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+      `}</style>
+      <span className="hourglass-spin" style={{ fontSize: size, lineHeight: 1 }}>⏳</span>
+      {showLabel && (
+        <span className="font-semibold" style={{ fontSize: Math.max(12, size * 0.6) }}>
           {label}
+          <span className="loading-dot">.</span>
+          <span className="loading-dot">.</span>
+          <span className="loading-dot">.</span>
         </span>
       )}
-    </div>
+    </span>
   )
+}
+
+// Kept for compatibility with existing imports — now an alias for the new indicator.
+export function RadialSpinner({ size = 40, label }) {
+  return <LoadingIndicator size={size * 0.55} label={label || 'Loading'} showLabel={!!label} />
 }
 
 export function SuccessScreen({ title, message, onClose }) {

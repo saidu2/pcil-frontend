@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAdmin } from '../context/AdminContext'
-import { RadialSpinner } from '../components/UI'
+import { LoadingIndicator } from '../components/UI'
 
 const G = '#A67C1A'
 
@@ -104,7 +104,7 @@ export default function AdminLogin() {
                 opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {loading ? <RadialSpinner size={20} /> : 'Verify'}
+                {loading ? <LoadingIndicator size={18} label="Verifying" /> : 'Verify'}
               </button>
 
               <button onClick={() => { setMfaMode(false); setMfaCode(''); setError('') }} style={{
@@ -161,7 +161,7 @@ export default function AdminLogin() {
             opacity: loading ? 0.7 : 1, transition: 'opacity 0.2s',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            {loading ? <RadialSpinner size={20} /> : 'Sign In to Admin'}
+            {loading ? <LoadingIndicator size={18} label="Signing in" /> : 'Sign In to Admin'}
           </button>
             </>
           )}
