@@ -153,7 +153,16 @@ let _loadingDotIndex = 0 // not used for animation timing; kept for potential fu
 
 export function LoadingIndicator({ size = 22, label = 'Signing in', showLabel = true }) {
   return (
-    <span className="flex items-center justify-center gap-2" role="status" aria-label={label}>
+    <span
+      className="flex items-center justify-center gap-2"
+      role="status"
+      aria-label={label}
+      style={{
+        background: 'rgba(0,0,0,0.75)',
+        borderRadius: 999,
+        padding: '6px 16px',
+      }}
+    >
       <style>{`
         @keyframes hourglass-flip {
           0%   { transform: rotate(0deg); }
@@ -179,11 +188,11 @@ export function LoadingIndicator({ size = 22, label = 'Signing in', showLabel = 
       `}</style>
       <span className="hourglass-spin" style={{ fontSize: size, lineHeight: 1 }}>⏳</span>
       {showLabel && (
-        <span className="font-semibold" style={{ fontSize: Math.max(12, size * 0.6) }}>
+        <span className="font-semibold" style={{ fontSize: Math.max(12, size * 0.6), color: '#F5D061' }}>
           {label}
-          <span className="loading-dot">.</span>
-          <span className="loading-dot">.</span>
-          <span className="loading-dot">.</span>
+          <span className="loading-dot" style={{ color: '#F5D061' }}>.</span>
+          <span className="loading-dot" style={{ color: '#F5D061' }}>.</span>
+          <span className="loading-dot" style={{ color: '#F5D061' }}>.</span>
         </span>
       )}
     </span>
