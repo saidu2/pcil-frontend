@@ -850,6 +850,15 @@ export default function Dashboard() {
     () => (portfolios || []).flatMap(pf => pf.holdings || []),
     [portfolios]
   )
+  // Which asset-class cards to show below. Deliberately checks whether a
+  // holding of that TYPE exists at all, not whether its value happens to
+  // be > 0 — a client with no fixed income holdings should never see a
+  // "Fixed Income ₦0" card (reads like an error, not "you have none"),
+  // but a real holding that happened to value at ₦0 for some edge-case
+  // reason should still show, since hiding it would be misleading in the
+  // opposite direction.
+  const hasEquityHoldings = allHoldings.some(h => h.type === 'equity')
+  const hasFixedIncomeHoldings = allHoldings.some(h => h.type === 'fixed_income')
   // Global admin setting. When off, the backend sends no holdings at all, so
   // the client sees their total value and chart but not the position detail.
   const showBreakdown = (portfolios || []).every(p => p.show_breakdown !== false)
@@ -1035,19 +1044,23 @@ export default function Dashboard() {
             not projections. Shown separately and above the projected cards
             below so the two are never confused for each other. */}
         {isApproved && hasPortfolios && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-4">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${hasEquityHoldings && hasFixedIncomeHoldings ? 'lg:grid-cols-3' : ''} gap-5 mb-4`}>
             <StatCard icon="💼" label="Portfolio Value (₦ · Valued)"
               value={portfolioTotalValue > 0 ? fmtNgn(portfolioTotalValue) : 'Awaiting valuation'}
               sub={portfolios[0]?.as_of
                 ? `As valued on ${new Date(portfolios[0].as_of).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
                 : 'Your investment manager has not run a valuation yet'}
               trend={null} />
-            <StatCard icon="📊" label="Equities (₦)"
-              value={fmtNgn((portfolios || []).reduce((s, p) => s + (p.equities_value || 0), 0))}
-              sub="Current market value of shares held" />
-            <StatCard icon="🏦" label="Fixed Income (₦)"
-              value={fmtNgn((portfolios || []).reduce((s, p) => s + (p.fixed_income_value || 0), 0))}
-              sub="Principal plus accrued returns" />
+            {hasEquityHoldings && (
+              <StatCard icon="📊" label="Equities (₦)"
+                value={fmtNgn((portfolios || []).reduce((s, p) => s + (p.equities_value || 0), 0))}
+                sub="Current market value of shares held" />
+            )}
+            {hasFixedIncomeHoldings && (
+              <StatCard icon="🏦" label="Fixed Income (₦)"
+                value={fmtNgn((portfolios || []).reduce((s, p) => s + (p.fixed_income_value || 0), 0))}
+                sub="Principal plus accrued returns" />
+            )}
           </div>
         )}
 
