@@ -10,7 +10,7 @@ export function GoldButton({ children, onClick, outline, className = '', type = 
       style={outline
         ? { border: '1.5px solid #B8860B', color: '#B8860B', background: 'transparent' }
         : { background: 'linear-gradient(135deg, #B8860B, #D4A017)', color: '#000' }}
-      className={`${sizes[size]} rounded-xl font-semibold transition-all hover:opacity-85 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center ${className}`}
+      className={`${sizes[size]} rounded-xl font-semibold transition-all hover:opacity-85 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center ${className}`}
     >
       {children}
     </button>

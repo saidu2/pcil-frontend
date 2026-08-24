@@ -100,7 +100,7 @@ export default function Landing() {
             Prime Capital & Investment Ltd offers carefully curated investment products, conventional and Sharia-compliant, tailored to every Nigerian investor's needs and risk appetite.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/signup">
               <GoldButton size="lg">Open an Account</GoldButton>
             </Link>
