@@ -617,6 +617,15 @@ export function AdminProvider({ children }) {
     await fetchPortfolioHoldings(subscriptionId)
   }
 
+  // Data-entry-mistake correction only — never used to close a real position
+  // (that's what redeemHolding is for). The backend should independently
+  // enforce the same "no valuation history" rule the frontend checks before
+  // showing this button, rather than trusting the frontend gate alone.
+  const deleteHolding = async (holdingId, subscriptionId) => {
+    await adminApi.delete(`/admin/portfolio/holdings/${holdingId}`)
+    await fetchPortfolioHoldings(subscriptionId)
+  }
+
   // ── Instruments master list (NEW) ───────────────────────────────────────
   const fetchInstruments = useCallback(async () => {
     try {
@@ -752,7 +761,7 @@ export function AdminProvider({ children }) {
       // Workflows (NEW in v11)
       createWorkflow, updateWorkflow, deleteWorkflow,
       addWorkflowStep, updateWorkflowStep, deleteWorkflowStep, actOnTask, downloadKycPdf, viewKycDocument,
-      addHolding, redeemHolding, submitPrices, runValuation,
+      addHolding, redeemHolding, deleteHolding, submitPrices, runValuation,
       editHolding, downloadPriceTemplate, uploadPrices,
       fetchInstruments, renameInstrument,
 

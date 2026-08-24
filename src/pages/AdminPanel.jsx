@@ -3295,7 +3295,7 @@ function SecuritySection({ admin, adminMfaSetup, adminMfaVerify, adminChangePass
 // actions will fail with a clear error if their role lacks the permission.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, fetchPortfolioHoldings, fetchValuationHistory, addHolding, redeemHolding, submitPrices, runValuation, editHolding, downloadPriceTemplate, uploadPrices, instruments, fetchInstruments, renameInstrument }) {
+function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, fetchPortfolioHoldings, fetchValuationHistory, addHolding, redeemHolding, deleteHolding, submitPrices, runValuation, editHolding, downloadPriceTemplate, uploadPrices, instruments, fetchInstruments, renameInstrument }) {
   const { T = DARK } = useTheme()
 
   // Instruments master list · surfaces every instrument name in use so
@@ -3335,6 +3335,8 @@ function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, 
   const [redeemModal, setRedeemModal] = useState(null) // holding being redeemed
   const [redeemAmount, setRedeemAmount] = useState('')
   const [redeemNote, setRedeemNote] = useState('')
+  const [deleteModal, setDeleteModal] = useState(null) // holding being deleted (data-entry mistake only — see note above)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -3410,6 +3412,19 @@ function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, 
       setRedeemModal(null); setRedeemAmount(''); setRedeemNote('')
     } catch (err) {
       setError(err.response?.data?.detail || 'Could not redeem holding.')
+    }
+  }
+
+  const submitDelete = async () => {
+    setError('')
+    setDeleteLoading(true)
+    try {
+      await deleteHolding(deleteModal.id, selectedSubId)
+      setDeleteModal(null)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not delete holding.')
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -3710,6 +3725,16 @@ function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, 
                   {h.status !== 'redeemed' && (
                     <ABtn small danger onClick={() => setRedeemModal(h)}>Redeem</ABtn>
                   )}
+                  {/* Delete only fixes a genuine data-entry mistake — wrong instrument,
+                      wrong client, duplicate, typo — never a real closed-out position.
+                      Closing a real position always goes through Redeem, which leaves
+                      a proper record. Gated on valuationHistory.length === 0: once this
+                      portfolio has had even one valuation run, every holding in it may
+                      have already contributed to a number the client has seen, so
+                      Delete disables entirely and Redeem becomes the only path. */}
+                  {h.status !== 'redeemed' && valuationHistory.length === 0 && (
+                    <ABtn small danger outline onClick={() => setDeleteModal(h)}>Delete</ABtn>
+                  )}
                 </div>
               </div>
             ))}
@@ -3834,6 +3859,24 @@ function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
           <ABtn outline onClick={() => setRedeemModal(null)}>Cancel</ABtn>
           <ABtn danger onClick={submitRedeem} disabled={!redeemAmount}>Confirm Redeem</ABtn>
+        </div>
+      </Modal>
+
+      {/* Delete Modal — data-entry mistakes only. Never used to close a real
+          position; that always goes through Redeem instead (see the gating
+          note on the Delete button above). */}
+      <Modal open={!!deleteModal} onClose={() => setDeleteModal(null)} title={`Delete: ${deleteModal?.instrument_name || ''}`}>
+        <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 16, lineHeight: 1.6 }}>
+          This permanently removes this holding. Use this only to correct a genuine
+          mistake — wrong instrument, wrong client, duplicate entry. If this position
+          is real and you want to close it out, use <strong>Redeem</strong> instead,
+          which keeps a proper record. This cannot be undone.
+        </p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+          <ABtn outline onClick={() => setDeleteModal(null)}>Cancel</ABtn>
+          <ABtn danger onClick={submitDelete} disabled={deleteLoading}>
+            {deleteLoading ? 'Deleting…' : 'Permanently Delete'}
+          </ABtn>
         </div>
       </Modal>
     </div>
@@ -4119,7 +4162,7 @@ export default function AdminPanel() {
     workflows, myTasks, createWorkflow, updateWorkflow, deleteWorkflow,
     addWorkflowStep, updateWorkflowStep, deleteWorkflowStep, actOnTask, downloadKycPdf,
     portfolioHoldings, valuationHistory, fetchPortfolioHoldings, fetchValuationHistory,
-    addHolding, redeemHolding, submitPrices, runValuation,
+    addHolding, redeemHolding, deleteHolding, submitPrices, runValuation,
     editHolding, downloadPriceTemplate, uploadPrices,
     instruments, fetchInstruments, renameInstrument,
     auditLog, addAuditLog,
@@ -4209,7 +4252,7 @@ export default function AdminPanel() {
       case 'mytasks':       return <MyTasksSection myTasks={myTasks} actOnTask={actOnTask} downloadKycPdf={downloadKycPdf} />
       case 'workflows':     return <WorkflowConfigSection workflows={workflows} createWorkflow={createWorkflow} updateWorkflow={updateWorkflow} deleteWorkflow={deleteWorkflow} addWorkflowStep={addWorkflowStep} updateWorkflowStep={updateWorkflowStep} deleteWorkflowStep={deleteWorkflowStep} />
       case 'security':      return <SecuritySection admin={admin} adminMfaSetup={adminMfaSetup} adminMfaVerify={adminMfaVerify} adminChangePassword={adminChangePassword} mustChangePassword={mustChangePassword} />
-      case 'portfolio':     return <PortfolioSection subscriptions={subscriptions} portfolioHoldings={portfolioHoldings} valuationHistory={valuationHistory} fetchPortfolioHoldings={fetchPortfolioHoldings} fetchValuationHistory={fetchValuationHistory} addHolding={addHolding} redeemHolding={redeemHolding} submitPrices={submitPrices} runValuation={runValuation} editHolding={editHolding} downloadPriceTemplate={downloadPriceTemplate} uploadPrices={uploadPrices} instruments={instruments} fetchInstruments={fetchInstruments} renameInstrument={renameInstrument} />
+      case 'portfolio':     return <PortfolioSection subscriptions={subscriptions} portfolioHoldings={portfolioHoldings} valuationHistory={valuationHistory} fetchPortfolioHoldings={fetchPortfolioHoldings} fetchValuationHistory={fetchValuationHistory} addHolding={addHolding} redeemHolding={redeemHolding} deleteHolding={deleteHolding} submitPrices={submitPrices} runValuation={runValuation} editHolding={editHolding} downloadPriceTemplate={downloadPriceTemplate} uploadPrices={uploadPrices} instruments={instruments} fetchInstruments={fetchInstruments} renameInstrument={renameInstrument} />
       default:              return <Dashboard clients={clients} subscriptions={subscriptions} kyc={kycData} redemptions={redemptions} />
     }
   }
