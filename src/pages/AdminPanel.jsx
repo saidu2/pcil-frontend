@@ -3728,11 +3728,18 @@ function PortfolioSection({ subscriptions, portfolioHoldings, valuationHistory, 
                   {/* Delete only fixes a genuine data-entry mistake — wrong instrument,
                       wrong client, duplicate, typo — never a real closed-out position.
                       Closing a real position always goes through Redeem, which leaves
-                      a proper record. Gated on valuationHistory.length === 0: once this
-                      portfolio has had even one valuation run, every holding in it may
-                      have already contributed to a number the client has seen, so
-                      Delete disables entirely and Redeem becomes the only path. */}
-                  {h.status !== 'redeemed' && valuationHistory.length === 0 && (
+                      a proper record. Gated per-holding: only shown if THIS holding's
+                      id has never appeared in any past valuation snapshot's breakdown
+                      for this portfolio — an existing client's portfolio can already
+                      have valuation history while a holding just added today has
+                      never been part of one, and that new holding should still be
+                      deletable. The backend independently re-checks this exact same
+                      condition and is the real source of truth; this is only a
+                      convenience so the button doesn't appear when it would be
+                      rejected anyway. */}
+                  {h.status !== 'redeemed' && !valuationHistory.some(
+                    v => (v.breakdown || []).some(entry => entry.holding_id === String(h.id))
+                  ) && (
                     <ABtn small danger outline onClick={() => setDeleteModal(h)}>Delete</ABtn>
                   )}
                 </div>
